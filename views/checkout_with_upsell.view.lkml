@@ -27,8 +27,8 @@ view: checkout_with_upsell {
       total_checkouts.search_id AS checkout_search_id,
       total_checkouts.package_id AS checkout_package_id,
       amadeus_upsell.created_at AS amadeus_created_at,
-      amadeus_upsell.search_id AS amadeus_search_id,
-      amadeus_upsell.package_id AS amadeus_package_id,
+      NULLIF(amadeus_upsell.package_id, '') AS amadeus_search_id,
+      NULLIF(amadeus_upsell.package_id, '') AS amadeus_package_id,
       amadeus_upsell.error_code AS amadeus_error_code,
       amadeus_upsell.error_message AS amadeus_error_message,
       amadeus_upsell.offers_returned AS amadeus_offers_returned
@@ -39,8 +39,7 @@ view: checkout_with_upsell {
       AND total_checkouts.package_id = amadeus_upsell.package_id
 
       WHERE total_checkouts.rn = 1
-      AND (amadeus_upsell.rn = 1 OR amadeus_upsell.rn IS NULL)
-      -- Here, manually apply 30 days filter yourself
+      AND (amadeus_upsell.rn = 1 OR amadeus_upsell.rn = 0)
       AND checkout_begin_checkout_timestamp >= subtractDays(today(), 30)
       ;;
   }
