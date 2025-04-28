@@ -39,7 +39,7 @@ view: checkout_with_upsell {
       AND total_checkouts.package_id = amadeus_upsell.package_id
 
       WHERE total_checkouts.rn = 1
-      AND (amadeus_upsell.rn = 1 OR amadeus_upsell.rn = 0)
+      AND (amadeus_upsell.rn = 1 OR amadeus_upsell.rn = 0 OR amadeus_upsell.rn is NULL)
       AND checkout_begin_checkout_timestamp >= subtractDays(today(), 30)
       ;;
   }
