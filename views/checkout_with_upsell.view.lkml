@@ -96,10 +96,7 @@ view: checkout_with_upsell {
 
   dimension: has_amadeus_call {
     type: yesno
-    sql: CASE
-         WHEN ${amadeus_package_id} IS NOT NULL THEN 'yes'
-         ELSE 'no'
-       END ;;
+    sql: CASE WHEN ${amadeus_package_id} IS NOT NULL THEN 'yes' ELSE 'no' END ;;
   }
 
 }
