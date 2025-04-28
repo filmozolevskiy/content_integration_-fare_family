@@ -143,4 +143,9 @@ view: checkout_with_upsell {
     sql: ${TABLE}.routehapp_errors ;;
   }
 
+  dimension: has_upsel_call {
+    type: yesno
+    sql: ${routehapp_package_id} IS NOT NULL ;;
+  }
+
 }
