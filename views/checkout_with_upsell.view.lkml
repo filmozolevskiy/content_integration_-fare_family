@@ -45,8 +45,8 @@ view: checkout_with_upsell {
       amadeus_upsell.offers_returned AS amadeus_offers_returned,
 
       routehappy.created_at AS routehapp_created_at,
-      NULLIF(routehappy.search_id) AS routehapp_search_id,
-      NULLIF(routehappy.package_id) AS routehapp_package_id,
+      NULLIF(routehappy.search_id, '') AS routehapp_search_id,
+      NULLIF(routehappy.package_id, '') AS routehapp_package_id,
       routehappy.itineraries AS routehapp_packages_sent,
       routehappy.error_message AS routehapp_errors
 
