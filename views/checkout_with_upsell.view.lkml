@@ -9,6 +9,7 @@ view: checkout_with_upsell {
           package_id,
           ROW_NUMBER() OVER (PARTITION BY search_id, package_id ORDER BY begin_checkout_timestamp DESC) AS rn
         FROM gtm_views.begin_checkout
+        WHERE begin_checkout_timestamp BETWEEN {% condition checkout_begin_checkout_timestamp %} {% endcondition %}
       ),
       amadeus_upsell AS (
         SELECT
@@ -20,6 +21,7 @@ view: checkout_with_upsell {
           offers_returned,
           ROW_NUMBER() OVER (PARTITION BY search_id, package_id, error_code, error_message, offers_returned ORDER BY created_at DESC) AS rn
         FROM jupiter.jupiter_fare_priceupsellwithoutpnr
+        WHERE created_at BETWEEN {% condition amadeus_created_at %} {% endcondition %}
       )
 
       SELECT
@@ -40,10 +42,9 @@ view: checkout_with_upsell {
 
       WHERE total_checkouts.rn = 1
       AND (amadeus_upsell.rn = 1 OR amadeus_upsell.rn IS NULL)
-      AND checkout_begin_checkout_timestamp BETWEEN {% condition checkout_begin_checkout_timestamp %} {% endcondition %}
-      AND amadeus_created_at BETWEEN {% condition amadeus_created_at %} {% endcondition %}
       ;;
   }
+
 
 
   # Now define your dimensions based on the new names:
