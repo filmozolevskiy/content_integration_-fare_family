@@ -93,4 +93,13 @@ view: checkout_with_upsell {
     type: string
     sql: ${TABLE}.amadeus_offers_returned ;;
   }
+
+  dimension: has_amadeus_call {
+    type: yesno
+    sql: CASE
+         WHEN ${amadeus_package_id} IS NOT NULL THEN 'yes'
+         ELSE 'no'
+       END ;;
+  }
+
 }
