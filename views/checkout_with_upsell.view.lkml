@@ -1,26 +1,26 @@
 view: checkout_with_upsell {
   derived_table: {
     sql:
-      WITH
-        total_checkouts AS (
-          SELECT
-            begin_checkout_timestamp,
-            search_id,
-            package_id,
-            ROW_NUMBER() OVER (PARTITION BY search_id, package_id ORDER BY begin_checkout_timestamp DESC) AS rn
-          FROM gtm_views.begin_checkout
-        ),
-        amadeus_upsell AS (
-          SELECT
-            created_at,
-            search_id,
-            package_id,
-            error_code,
-            error_message,
-            offers_returned,
-            ROW_NUMBER() OVER (PARTITION BY search_id, package_id, error_code, error_message, offers_returned ORDER BY created_at DESC) AS rn
-          FROM jupiter.jupiter_fare_priceupsellwithoutpnr
-        )
+    WITH
+      total_checkouts AS (
+        SELECT
+          begin_checkout_timestamp,
+          search_id,
+          package_id,
+          ROW_NUMBER() OVER (PARTITION BY search_id, package_id ORDER BY begin_checkout_timestamp DESC) AS rn
+        FROM gtm_views.begin_checkout
+      ),
+      amadeus_upsell AS (
+        SELECT
+          created_at,
+          search_id,
+          package_id,
+          error_code,
+          error_message,
+          offers_returned,
+          ROW_NUMBER() OVER (PARTITION BY search_id, package_id, error_code, error_message, offers_returned ORDER BY created_at DESC) AS rn
+        FROM jupiter.jupiter_fare_priceupsellwithoutpnr
+      )
 
       SELECT
       total_checkouts.begin_checkout_timestamp AS checkout_begin_checkout_timestamp,
@@ -40,10 +40,11 @@ view: checkout_with_upsell {
 
       WHERE total_checkouts.rn = 1
       AND (amadeus_upsell.rn = 1 OR amadeus_upsell.rn IS NULL)
-      AND checkout_begin_checkout_timestamp BETWEEN {% condition checkout_begin_checkout_timestamp %} {% endcondition %}
-      AND amadeus_created_at BETWEEN {% condition amadeus_created_at %} {% endcondition %}
+      -- Here, manually apply 30 days filter yourself
+      AND checkout_begin_checkout_timestamp >= subtractDays(today(), 30)
       ;;
   }
+
 
 
   # Now define your dimensions based on the new names:
