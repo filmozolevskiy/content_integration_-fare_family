@@ -1,14 +1,14 @@
 view: checkout_with_upsell {
   derived_table: {
     sql:
-      WITH total_checkouts AS (
+    WITH
+      total_checkouts AS (
         SELECT
           begin_checkout_timestamp,
           search_id,
           package_id,
           ROW_NUMBER() OVER (PARTITION BY search_id, package_id ORDER BY begin_checkout_timestamp DESC) AS rn
         FROM gtm_views.begin_checkout
-        WHERE begin_checkout_timestamp BETWEEN {% condition checkout_begin_checkout_timestamp %} {% endcondition %}
       ),
       amadeus_upsell AS (
         SELECT
@@ -20,14 +20,12 @@ view: checkout_with_upsell {
           offers_returned,
           ROW_NUMBER() OVER (PARTITION BY search_id, package_id, error_code, error_message, offers_returned ORDER BY created_at DESC) AS rn
         FROM jupiter.jupiter_fare_priceupsellwithoutpnr
-        WHERE created_at BETWEEN {% condition amadeus_created_at %} {% endcondition %}
       )
 
       SELECT
       total_checkouts.begin_checkout_timestamp AS checkout_begin_checkout_timestamp,
       total_checkouts.search_id AS checkout_search_id,
       total_checkouts.package_id AS checkout_package_id,
-
       amadeus_upsell.created_at AS amadeus_created_at,
       amadeus_upsell.search_id AS amadeus_search_id,
       amadeus_upsell.package_id AS amadeus_package_id,
@@ -39,11 +37,14 @@ view: checkout_with_upsell {
       LEFT JOIN amadeus_upsell
       ON total_checkouts.search_id = amadeus_upsell.search_id
       AND total_checkouts.package_id = amadeus_upsell.package_id
+
       WHERE total_checkouts.rn = 1
       AND (amadeus_upsell.rn = 1 OR amadeus_upsell.rn IS NULL)
-      ORDER BY total_checkouts.search_id, total_checkouts.package_id
+      AND checkout_begin_checkout_timestamp BETWEEN {% condition checkout_begin_checkout_timestamp %} {% endcondition %}
+      AND amadeus_created_at BETWEEN {% condition amadeus_created_at %} {% endcondition %}
       ;;
   }
+
 
   # Now define your dimensions based on the new names:
 
