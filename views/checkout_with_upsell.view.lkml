@@ -36,7 +36,7 @@ view: checkout_with_upsell {
       ) AS amadeus_upsell
       ON total_checkouts.search_id = amadeus_upsell.search_id
       AND total_checkouts.package_id = amadeus_upsell.package_id
-      AND amadeus_upsell.rn = 1
+      AND (amadeus_upsell.rn = 1 or amadeus_upsell.rn = 0 or amadeus_upsell.rn is NULL)
       WHERE total_checkouts.rn = 1
       ;;
   }
