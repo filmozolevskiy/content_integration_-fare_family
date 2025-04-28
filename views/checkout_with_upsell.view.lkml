@@ -8,7 +8,7 @@ view: checkout_with_upsell {
           package_id,
           ROW_NUMBER() OVER (PARTITION BY search_id, package_id ORDER BY begin_checkout_timestamp DESC) AS rn
         FROM gtm_views.begin_checkout
-        WHERE begin_checkout_timestamp BETWEEN {% condition begin_checkout_timestamp %} {% endcondition %}
+        WHERE begin_checkout_timestamp BETWEEN {% condition checkout_begin_checkout_timestamp %} {% endcondition %}
       ),
       amadeus_upsell AS (
         SELECT
@@ -20,17 +20,21 @@ view: checkout_with_upsell {
           offers_returned,
           ROW_NUMBER() OVER (PARTITION BY search_id, package_id, error_code, error_message, offers_returned ORDER BY created_at DESC) AS rn
         FROM jupiter.jupiter_fare_priceupsellwithoutpnr
-        WHERE created_at BETWEEN {% condition created_at %} {% endcondition %}
+        WHERE created_at BETWEEN {% condition amadeus_created_at %} {% endcondition %}
       )
 
       SELECT
-      total_checkouts.begin_checkout_timestamp,
-      total_checkouts.search_id,
-      total_checkouts.package_id,
-      amadeus_upsell.created_at,
-      amadeus_upsell.error_code,
-      amadeus_upsell.error_message,
-      amadeus_upsell.offers_returned
+      total_checkouts.begin_checkout_timestamp AS checkout_begin_checkout_timestamp,
+      total_checkouts.search_id AS checkout_search_id,
+      total_checkouts.package_id AS checkout_package_id,
+
+      amadeus_upsell.created_at AS amadeus_created_at,
+      amadeus_upsell.search_id AS amadeus_search_id,
+      amadeus_upsell.package_id AS amadeus_package_id,
+      amadeus_upsell.error_code AS amadeus_error_code,
+      amadeus_upsell.error_message AS amadeus_error_message,
+      amadeus_upsell.offers_returned AS amadeus_offers_returned
+
       FROM total_checkouts
       LEFT JOIN amadeus_upsell
       ON total_checkouts.search_id = amadeus_upsell.search_id
@@ -41,39 +45,51 @@ view: checkout_with_upsell {
       ;;
   }
 
-  dimension: begin_checkout_timestamp {
+  # Now define your dimensions based on the new names:
+
+  dimension: checkout_begin_checkout_timestamp {
     type: date_time
-    sql: ${TABLE}.begin_checkout_timestamp ;;
+    sql: ${TABLE}.checkout_begin_checkout_timestamp ;;
   }
 
-  dimension: search_id {
-    type: string
+  dimension: checkout_search_id {
     primary_key: yes
-    sql: ${TABLE}.search_id ;;
-  }
-
-  dimension: package_id {
     type: string
-    sql: ${TABLE}.package_id ;;
+    sql: ${TABLE}.checkout_search_id ;;
   }
 
-  dimension: created_at {
+  dimension: checkout_package_id {
+    type: string
+    sql: ${TABLE}.checkout_package_id ;;
+  }
+
+  dimension: amadeus_created_at {
     type: date_time
-    sql: ${TABLE}.created_at ;;
+    sql: ${TABLE}.amadeus_created_at ;;
   }
 
-  dimension: error_code {
+  dimension: amadeus_search_id {
     type: string
-    sql: ${TABLE}.error_code ;;
+    sql: ${TABLE}.amadeus_search_id ;;
   }
 
-  dimension: error_message {
+  dimension: amadeus_package_id {
     type: string
-    sql: ${TABLE}.error_message ;;
+    sql: ${TABLE}.amadeus_package_id ;;
   }
 
-  dimension: offers_returned {
+  dimension: amadeus_error_code {
     type: string
-    sql: ${TABLE}.offers_returned ;;
+    sql: ${TABLE}.amadeus_error_code ;;
+  }
+
+  dimension: amadeus_error_message {
+    type: string
+    sql: ${TABLE}.amadeus_error_message ;;
+  }
+
+  dimension: amadeus_offers_returned {
+    type: string
+    sql: ${TABLE}.amadeus_offers_returned ;;
   }
 }
