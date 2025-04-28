@@ -27,7 +27,7 @@ view: checkout_with_upsell {
       total_checkouts.search_id AS checkout_search_id,
       total_checkouts.package_id AS checkout_package_id,
       amadeus_upsell.created_at AS amadeus_created_at,
-      NULLIF(amadeus_upsell.package_id, '') AS amadeus_search_id,
+      NULLIF(amadeus_upsell.search_id, '') AS amadeus_search_id,
       NULLIF(amadeus_upsell.package_id, '') AS amadeus_package_id,
       amadeus_upsell.error_code AS amadeus_error_code,
       amadeus_upsell.error_message AS amadeus_error_message,
