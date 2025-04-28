@@ -9,35 +9,40 @@ view: checkout_with_upsell {
           package_id,
           ROW_NUMBER() OVER (PARTITION BY search_id, package_id ORDER BY begin_checkout_timestamp DESC) AS rn
         FROM gtm_views.begin_checkout
-        WHERE begin_checkout_timestamp >= subtractDays(today(), 30)
+      ),
+      amadeus_upsell AS (
+        SELECT
+          created_at,
+          search_id,
+          package_id,
+          error_code,
+          error_message,
+          offers_returned,
+          ROW_NUMBER() OVER (PARTITION BY search_id, package_id, error_code, error_message, offers_returned ORDER BY created_at DESC) AS rn
+        FROM jupiter.jupiter_fare_priceupsellwithoutpnr
       )
 
       SELECT
       total_checkouts.begin_checkout_timestamp AS checkout_begin_checkout_timestamp,
       total_checkouts.search_id AS checkout_search_id,
       total_checkouts.package_id AS checkout_package_id,
+      amadeus_upsell.created_at AS amadeus_created_at,
       NULLIF(amadeus_upsell.search_id, '') AS amadeus_search_id,
       NULLIF(amadeus_upsell.package_id, '') AS amadeus_package_id,
-      amadeus_upsell.created_at AS amadeus_created_at,
       amadeus_upsell.error_code AS amadeus_error_code,
       amadeus_upsell.error_message AS amadeus_error_message,
-      amadeus_upsell.offers_returned AS amadeus_offers_returned
+      amadeus_upsell.offers_returned AS amadeus_offers_returned,
+      total_checkouts.rn,
+      amadeus_upsell.rn
+
       FROM total_checkouts
-      LEFT JOIN (
-      SELECT
-      created_at,
-      search_id,
-      package_id,
-      error_code,
-      error_message,
-      offers_returned,
-      ROW_NUMBER() OVER (PARTITION BY search_id, package_id, error_code, error_message, offers_returned ORDER BY created_at DESC) AS rn
-      FROM jupiter.jupiter_fare_priceupsellwithoutpnr
-      ) AS amadeus_upsell
+      LEFT JOIN amadeus_upsell
       ON total_checkouts.search_id = amadeus_upsell.search_id
       AND total_checkouts.package_id = amadeus_upsell.package_id
-      AND (amadeus_upsell.rn = 1 or amadeus_upsell.rn = 0 or amadeus_upsell.rn is NULL)
+
       WHERE total_checkouts.rn = 1
+      AND (amadeus_upsell.rn = 1 OR amadeus_upsell.rn = 0)
+      AND total_checkouts.begin_checkout_timestamp >= subtractDays(today(), 1)
       ;;
   }
 
