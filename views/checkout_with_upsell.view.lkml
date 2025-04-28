@@ -45,8 +45,8 @@ view: checkout_with_upsell {
       amadeus_upsell.offers_returned AS amadeus_offers_returned,
 
       routehappy.created_at AS routehapp_created_at,
-      routehappy.search_id AS routehapp_search_id,
-      routehappy.package_id AS routehapp_package_id,
+      NULLIF(routehappy.search_id) AS routehapp_search_id,
+      NULLIF(routehappy.package_id) AS routehapp_package_id,
       routehappy.itineraries AS routehapp_packages_sent,
       routehappy.error_message AS routehapp_errors
 
@@ -143,7 +143,7 @@ view: checkout_with_upsell {
     sql: ${TABLE}.routehapp_errors ;;
   }
 
-  dimension: has_upsel_call {
+  dimension: has_routehappy_call {
     type: yesno
     sql: ${routehapp_package_id} IS NOT NULL ;;
   }
