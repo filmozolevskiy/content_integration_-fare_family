@@ -367,6 +367,40 @@ view: checkout_with_upsell {
     value_format_name: decimal_0
   }
 
+  measure: amadeus_calls_coverage_pct {
+    type: number
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_calls_coverage} * 1.0 / ${number_of_checkouts} END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: percent_2
+  }
+
+  measure: amadeus_already_called_pct {
+    type: number
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_already_called} * 1.0 / ${number_of_checkouts} END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: percent_2
+  }
+
+  measure: amadeus_return_proportion_pct {
+    type: number
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_return_proportion} * 1.0 / ${number_of_checkouts} END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: percent_2
+  }
+
+  measure: amadeus_filtered_internally_pct {
+    type: number
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_filtered_internally} * 1.0 / ${number_of_checkouts} END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: percent_2
+  }
+
+  measure: amadeus_errors_pct {
+    type: number
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_errors} * 1.0 / ${number_of_checkouts} END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: percent_2
+  }
 
 
   # --- Routehappy fields  ---
