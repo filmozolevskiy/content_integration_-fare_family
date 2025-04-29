@@ -155,232 +155,238 @@ view: checkout_with_upsell {
   dimension: checkout_begin_checkout_timestamp {
     type: date_time
     sql: ${TABLE}.checkout_begin_checkout_timestamp ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
 
   dimension: checkout_search_id {
     primary_key: yes
     type: string
     sql: ${TABLE}.checkout_search_id ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
 
   dimension: checkout_package_id {
     type: string
     sql: ${TABLE}.checkout_package_id ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
 
   dimension: surfer_id {
     type: string
     sql: ${TABLE}.surfer_id ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
 
   dimension: site_name {
     type: string
     sql: ${TABLE}.site_name ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
 
   dimension: currency {
     type: string
     sql: ${TABLE}.currency ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
 
   dimension: affiliate_id {
     type: string
     sql: ${TABLE}.affiliate_id ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
 
   dimension: origin_airport {
     type: string
     sql: ${TABLE}.origin_airport ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
 
   dimension: destination_airport {
     type: string
     sql: ${TABLE}.destination_airport ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
 
   dimension: num_adults {
     type: number
     sql: ${TABLE}.num_adults ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
 
   dimension: num_children {
     type: number
     sql: ${TABLE}.num_children ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
 
   dimension: num_infants {
     type: number
     sql: ${TABLE}.num_infants ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
 
   dimension: num_infants_seat {
     type: number
     sql: ${TABLE}.num_infants_seat ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
 
   dimension: departure_date {
     type: date
     sql: ${TABLE}.departure_date ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
 
   dimension: return_date {
     type: date
     sql: ${TABLE}.return_date ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
 
   dimension: flight_class {
     type: string
     sql: ${TABLE}.flight_class ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
 
   dimension: fare_class {
     type: string
     sql: ${TABLE}.fare_class ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
 
   dimension: trip_type {
     type: string
     sql: ${TABLE}.trip_type ;;
-    group_label: "Checkout"
+    group_label: "1. Checkout"
   }
+
 
   # --- Amadeus Upsell ---
   dimension: amadeus_created_at {
     type: date_time
     sql: ${TABLE}.amadeus_created_at ;;
-    group_label: "Amadeus Upsell"
+    group_label: "2. Amadeus Upsell"
   }
 
   dimension: amadeus_search_id {
     type: string
     sql: ${TABLE}.amadeus_search_id ;;
-    group_label: "Amadeus Upsell"
+    group_label: "2. Amadeus Upsell"
   }
 
   dimension: amadeus_package_id {
     type: string
     sql: ${TABLE}.amadeus_package_id ;;
-    group_label: "Amadeus Upsell"
+    group_label: "2. Amadeus Upsell"
   }
 
   dimension: amadeus_error_code {
     type: string
     sql: ${TABLE}.amadeus_error_code ;;
-    group_label: "Amadeus Upsell"
+    group_label: "2. Amadeus Upsell"
   }
 
   dimension: amadeus_error_message {
     type: string
     sql: ${TABLE}.amadeus_error_message ;;
-    group_label: "Amadeus Upsell"
+    group_label: "2. Amadeus Upsell"
   }
 
   dimension: amadeus_offers_returned {
     type: string
     sql: ${TABLE}.amadeus_offers_returned ;;
-    group_label: "Amadeus Upsell"
+    group_label: "2. Amadeus Upsell"
   }
 
   dimension: has_amadeus_call {
     type: yesno
     sql: ${amadeus_package_id} IS NOT NULL ;;
-    group_label: "Amadeus Upsell"
+    group_label: "2. Amadeus Upsell"
   }
 
-  # --- Routehappy ---
+
+  # --- Routehappy fields  ---
   dimension: routehapp_created_at {
     type: date_time
     sql: ${TABLE}.routehapp_created_at ;;
-    group_label: "Routehappy"
+    group_label: "3. Routehappy"
   }
 
   dimension: routehapp_search_id {
     type: string
     sql: ${TABLE}.routehapp_search_id ;;
-    group_label: "Routehappy"
+    group_label: "3. Routehappy"
   }
 
   dimension: routehapp_package_id {
     type: string
     sql: ${TABLE}.routehapp_package_id ;;
-    group_label: "Routehappy"
+    group_label: "3. Routehappy"
   }
 
   dimension: routehapp_packages_sent {
     type: string
     sql: ${TABLE}.routehapp_packages_sent ;;
-    group_label: "Routehappy"
+    group_label: "3. Routehappy"
   }
 
   dimension: routehapp_errors {
     type: string
     sql: ${TABLE}.routehapp_errors ;;
-    group_label: "Routehappy"
+    group_label: "3. Routehappy"
   }
 
   dimension: has_routehappy_call {
     type: yesno
     sql: ${routehapp_package_id} IS NOT NULL ;;
-    group_label: "Routehappy"
+    group_label: "3. Routehappy"
   }
+
+
 
   # --- Final Step Upsell ---
   dimension: final_step_created_at {
     type: date_time
     sql: ${TABLE}.final_step_created_at ;;
-    group_label: "Final Step Upsell"
+    group_label: "4. Final Step Upsell"
   }
 
   dimension: final_step_search_id {
     type: string
     sql: ${TABLE}.final_step_search_id ;;
-    group_label: "Final Step Upsell"
+    group_label: "4. Final Step Upsell"
   }
 
   dimension: final_step_package_id {
     type: string
     sql: ${TABLE}.final_step_package_id ;;
-    group_label: "Final Step Upsell"
+    group_label: "4. Final Step Upsell"
   }
 
   dimension: is_eligible_for_upgrade {
     type: yesno
     sql: ${TABLE}.is_eligible_for_upgrade ;;
-    group_label: "Final Step Upsell"
+    group_label: "4. Final Step Upsell"
   }
 
   dimension: final_step_offers_returned {
     type: string
     sql: ${TABLE}.final_step_offers_returned ;;
-    group_label: "Final Step Upsell"
+    group_label: "4. Final Step Upsell"
   }
 
   dimension: final_step_offers_shown {
     type: string
     sql: ${TABLE}.final_step_offers_shown ;;
-    group_label: "Final Step Upsell"
+    group_label: "4. Final Step Upsell"
   }
 
   dimension: has_final_step_call {
     type: yesno
     sql: ${final_step_package_id} IS NOT NULL ;;
-    group_label: "Final Step Upsell"
+    group_label: "4. Final Step Upsell"
   }
+
+
 }
