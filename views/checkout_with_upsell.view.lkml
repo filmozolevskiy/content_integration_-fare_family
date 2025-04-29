@@ -261,6 +261,12 @@ view: checkout_with_upsell {
     group_label: "1. Checkout"
   }
 
+  measure: number_of_checkouts {
+    type: count
+    group_label: "1. Checkout"
+    value_format_name: decimal_0
+  }
+
 
   # --- Amadeus Upsell ---
   dimension: amadeus_created_at {
@@ -304,6 +310,59 @@ view: checkout_with_upsell {
     sql: ${amadeus_package_id} IS NOT NULL ;;
     group_label: "2. Amadeus Upsell"
   }
+
+  measure: amadeus_calls_coverage {
+    type: number
+    sql: CASE
+         WHEN ${has_amadeus_call} AND (${amadeus_error_message} IS NULL OR ${amadeus_error_code} IS NOT NULL)
+         THEN 1 ELSE NULL
+       END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: decimal_0
+  }
+
+  measure: amadeus_already_called {
+    type: number
+    sql: CASE
+         WHEN ${amadeus_error_message} = 'upsell_already_called_for_package'
+         THEN 1 ELSE NULL
+       END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: decimal_0
+  }
+
+  measure: amadeus_return_proportion {
+    type: number
+    sql: CASE
+         WHEN ${amadeus_offers_returned} > 0
+         THEN 1 ELSE NULL
+       END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: decimal_0
+  }
+
+  measure: amadeus_filtered_internally {
+    type: number
+    sql: CASE
+         WHEN ${amadeus_error_code} IS NULL
+           AND ${amadeus_error_message} IS NOT NULL
+           AND ${amadeus_error_message} != 'upsell_already_called_for_package'
+         THEN 1 ELSE NULL
+       END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: decimal_0
+  }
+
+  measure: amadeus_errors {
+    type: number
+    sql: CASE
+         WHEN ${amadeus_error_code} IS NOT NULL
+         THEN 1 ELSE NULL
+       END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: decimal_0
+  }
+
 
 
   # --- Routehappy fields  ---
