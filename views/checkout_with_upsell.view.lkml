@@ -466,7 +466,49 @@ view: checkout_with_upsell {
     group_label: "3. Routehappy"
   }
 
+  measure: routehappy_errors_count {
+    type: sum
+    sql: CASE WHEN ${routehapp_errors} IS NOT NULL THEN 1 ELSE 0 END ;;
+    group_label: "3. Routehappy"
+    value_format_name: decimal_0
+  }
 
+  measure: routehappy_calls_count {
+    type: sum
+    sql: CASE WHEN ${has_routehappy_call} THEN 1 ELSE 0 END ;;
+    group_label: "3. Routehappy"
+    value_format_name: decimal_0
+    hidden: yes
+  }
+
+  measure: routehappy_sent_count {
+    type: sum
+    sql: CASE WHEN ${routehapp_packages_sent} > 0 THEN 1 ELSE 0 END ;;
+    group_label: "3. Routehappy"
+    value_format_name: decimal_0
+    hidden: yes
+  }
+
+  measure: routehappy_errors_pct {
+    type: number
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${routehappy_errors_count} * 1.0 / ${number_of_checkouts} END ;;
+    group_label: "3. Routehappy"
+    value_format_name: percent_2
+  }
+
+  measure: routehappy_calls_pct {
+    type: number
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${routehappy_calls_count} * 1.0 / ${number_of_checkouts} END ;;
+    group_label: "3. Routehappy"
+    value_format_name: percent_2
+  }
+
+  measure: routehappy_sent_pct {
+    type: number
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${routehappy_sent_count} * 1.0 / ${number_of_checkouts} END ;;
+    group_label: "3. Routehappy"
+    value_format_name: percent_2
+  }
 
   # --- Final Step Upsell ---
   dimension: final_step_created_at {
@@ -512,6 +554,51 @@ view: checkout_with_upsell {
     type: yesno
     sql: ${final_step_package_id} IS NOT NULL ;;
     group_label: "4. Final Step Upsell"
+  }
+
+  measure: final_step_offers_returned_count {
+    type: sum
+    sql: CASE WHEN ${final_step_offers_returned} > 0 THEN 1 ELSE 0 END ;;
+    group_label: "4. Final Step Upsell"
+    value_format_name: decimal_0
+    hidden: yes
+  }
+
+  measure: final_step_offers_shown_count {
+    type: sum
+    sql: CASE WHEN ${final_step_offers_shown} > 0 THEN 1 ELSE 0 END ;;
+    group_label: "4. Final Step Upsell"
+    value_format_name: decimal_0
+    hidden: yes
+  }
+
+  measure: final_step_eligible_count {
+    type: sum
+    sql: CASE WHEN ${is_eligible_for_upgrade} THEN 1 ELSE 0 END ;;
+    group_label: "4. Final Step Upsell"
+    value_format_name: decimal_0
+    hidden: yes
+  }
+
+  measure: final_step_offers_returned_pct {
+    type: number
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${final_step_offers_returned_count} * 1.0 / ${number_of_checkouts} END ;;
+    group_label: "4. Final Step Upsell"
+    value_format_name: percent_2
+  }
+
+  measure: final_step_offers_shown_pct {
+    type: number
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${final_step_offers_shown_count} * 1.0 / ${number_of_checkouts} END ;;
+    group_label: "4. Final Step Upsell"
+    value_format_name: percent_2
+  }
+
+  measure: final_step_eligible_pct {
+    type: number
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${final_step_eligible_count} * 1.0 / ${number_of_checkouts} END ;;
+    group_label: "4. Final Step Upsell"
+    value_format_name: percent_2
   }
 
 
