@@ -323,9 +323,10 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
+    hidden: yes
   }
 
-  measure: amadeus_already_called {
+  measure: repetitive_checkouts {
     type: sum
     sql: CASE
            WHEN ${amadeus_error_message} = 'upsell_already_called_for_package'
@@ -333,6 +334,18 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
+    hidden: yes
+  }
+
+  measure: upgraded_checkouts {
+    type: sum
+    sql: CASE
+           WHEN ${amadeus_error_message} = 'upsell_already_called_for_upgraded_package'
+           THEN 1 ELSE 0
+         END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: decimal_0
+    hidden: yes
   }
 
   measure: amadeus_return_proportion {
@@ -343,6 +356,7 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
+    hidden: yes
   }
 
   measure: amadeus_filtered_internally {
@@ -355,6 +369,7 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
+    hidden: yes
   }
 
   measure: amadeus_errors {
@@ -365,6 +380,7 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
+    hidden: yes
   }
 
   measure: amadeus_calls_coverage_pct {
@@ -374,9 +390,16 @@ view: checkout_with_upsell {
     value_format_name: percent_2
   }
 
-  measure: amadeus_already_called_pct {
+  measure: repetitive_checkouts_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_already_called} * 1.0 / ${number_of_checkouts} END ;;
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${repetitive_checkouts} * 1.0 / ${number_of_checkouts} END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: percent_2
+  }
+
+  measure: upgraded_checkouts_pct {
+    type: number
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${upgraded_checkouts} * 1.0 / ${number_of_checkouts} END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
   }
