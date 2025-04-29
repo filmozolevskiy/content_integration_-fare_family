@@ -22,72 +22,45 @@ view: checkout_with_upsell {
             flight_class,
             fare_class,
             trip_type,
-            ROW_NUMBER() OVER (
-              PARTITION BY
-                search_id,
-                package_id,
-                surfer_id,
-                site_name,
-                currency,
-                affiliate_id,
-                origin_airport,
-                destination_airport,
-                num_adults,
-                num_children,
-                num_infants,
-                num_infants_seat,
-                departure_date,
-                return_date,
-                flight_class,
-                fare_class,
-                trip_type
-              ORDER BY begin_checkout_timestamp DESC
-            ) AS rn
+            ROW_NUMBER() OVER (PARTITION BY search_id,package_id ORDER BY begin_checkout_timestamp DESC) AS rn
           FROM gtm_views.begin_checkout
         ),
 
-      amadeus_upsell AS (
-      SELECT
-      created_at,
-      search_id,
-      package_id,
-      error_code,
-      error_message,
-      offers_returned,
-      ROW_NUMBER() OVER (
-      PARTITION BY search_id, package_id, error_code, error_message, offers_returned
-      ORDER BY created_at DESC
-      ) AS rn
-      FROM jupiter.jupiter_fare_priceupsellwithoutpnr
+        amadeus_upsell AS (
+          SELECT
+            created_at,
+            search_id,
+            package_id,
+            error_code,
+            error_message,
+            offers_returned,
+            ROW_NUMBER() OVER (PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
+          FROM jupiter.jupiter_fare_priceupsellwithoutpnr
+        ),
+
+        routehappy AS (
+          SELECT
+            created_at,
+            search_id,
+            package_id,
+            itineraries,
+            error_message,
+            ROW_NUMBER() OVER (
+            PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
+          FROM jupiter.jupiter_consolidated
       ),
 
-      routehappy AS (
-      SELECT
-      created_at,
-      search_id,
-      package_id,
-      itineraries,
-      error_message,
-      ROW_NUMBER() OVER (
-      PARTITION BY search_id, package_id, itineraries, error_message
-      ORDER BY created_at DESC
-      ) AS rn
-      FROM jupiter.jupiter_consolidated
-      ),
-
-      final_step AS (
-      SELECT
-      created_at,
-      search_id,
-      package_id,
-      is_eligible_for_upgrade,
-      offers_returned,
-      offers_shown,
-      ROW_NUMBER() OVER (
-      PARTITION BY search_id, package_id, is_eligible_for_upgrade, offers_returned, offers_shown
-      ORDER BY created_at DESC
-      ) AS rn
-      FROM jupiter.jupiter_upsell_proposals
+        final_step AS (
+          SELECT
+            created_at,
+            search_id,
+            package_id,
+            is_eligible_for_upgrade,
+            offers_returned,
+            offers_shown,
+            ROW_NUMBER() OVER (
+            PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
+          FROM jupiter.jupiter_upsell_proposals
       )
 
       SELECT
