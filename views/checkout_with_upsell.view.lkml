@@ -62,6 +62,18 @@ view: checkout_with_upsell {
             error_message,
             ROW_NUMBER() OVER (PARTITION BY search_id, package_id, itineraries, error_message ORDER BY created_at DESC) AS rn
           FROM jupiter.jupiter_consolidated
+        ),
+        final_step AS (
+            SELECT
+                created_at,
+                search_id,
+                package_id,
+                is_eligible_for_upgrade,
+                offers_returned,
+                offers_shown,
+                ROW_NUMBER() OVER (PARTITION BY search_id, package_id, is_eligible_for_upgrade, offers_returned,
+                    offers_shown ORDER BY created_at DESC) AS rn
+            FROM jupiter.jupiter_upsell_proposals
         )
 
       SELECT
@@ -95,7 +107,14 @@ view: checkout_with_upsell {
       NULLIF(routehappy.search_id, '') AS routehapp_search_id,
       NULLIF(routehappy.package_id, '') AS routehapp_package_id,
       routehappy.itineraries AS routehapp_packages_sent,
-      routehappy.error_message AS routehapp_errors
+      routehappy.error_message AS routehapp_errors,
+
+      final_step.created_at,
+      NULLIF(final_step.search_id, ''),
+      NULLIF(final_step.package_id, ''),
+      final_step.is_eligible_for_upgrade,
+      final_step.offers_returned,
+      final_step.offers_shown
 
       FROM total_checkouts
       LEFT JOIN amadeus_upsell
@@ -104,10 +123,14 @@ view: checkout_with_upsell {
       LEFT JOIN routehappy
       ON total_checkouts.search_id = routehappy.search_id
       AND total_checkouts.package_id = routehappy.package_id
+      LEFT JOIN final_step
+      ON total_checkouts.search_id = final_step.search_id
+      AND total_checkouts.package_id = final_step.package_id
 
       WHERE total_checkouts.rn = 1
       AND (amadeus_upsell.rn = 1 OR amadeus_upsell.rn = 0)
       AND (routehappy.rn = 1 OR routehappy.rn = 0)
+      AND (final_step.rn = 1 OR final_step.rn = 0)
       AND total_checkouts.begin_checkout_timestamp >= subtractDays(today(), 1)
       ;;
   }
