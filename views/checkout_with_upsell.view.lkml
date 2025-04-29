@@ -126,7 +126,7 @@ view: checkout_with_upsell {
       final_step.created_at AS final_step_created_at,
       NULLIF(final_step.search_id, '') AS final_step_search_id,
       NULLIF(final_step.package_id, '') AS final_step_package_id,
-      final_step.is_eligible_for_upgrade,
+      final_step.is_eligible_for_upgrade AS is_eligible_for_upgrade,
       final_step.offers_returned AS final_step_offers_returned,
       final_step.offers_shown AS final_step_offers_shown
 
