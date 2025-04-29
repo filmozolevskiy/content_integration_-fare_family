@@ -316,53 +316,53 @@ view: checkout_with_upsell {
   }
 
   measure: amadeus_calls_coverage {
-    type: number
+    type: sum
     sql: CASE
-         WHEN ${has_amadeus_call} AND (${amadeus_error_message} IS NULL OR ${amadeus_error_code} IS NOT NULL)
-         THEN 1 ELSE NULL
-       END ;;
+           WHEN ${has_amadeus_call} AND (${amadeus_error_message} IS NULL OR ${amadeus_error_code} IS NOT NULL)
+           THEN 1 ELSE 0
+         END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
   }
 
   measure: amadeus_already_called {
-    type: number
+    type: sum
     sql: CASE
-         WHEN ${amadeus_error_message} = 'upsell_already_called_for_package'
-         THEN 1 ELSE NULL
-       END ;;
+           WHEN ${amadeus_error_message} = 'upsell_already_called_for_package'
+           THEN 1 ELSE 0
+         END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
   }
 
   measure: amadeus_return_proportion {
-    type: number
+    type: sum
     sql: CASE
-         WHEN ${amadeus_offers_returned} > 0
-         THEN 1 ELSE NULL
-       END ;;
+           WHEN ${amadeus_offers_returned} > 0
+           THEN 1 ELSE 0
+         END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
   }
 
   measure: amadeus_filtered_internally {
-    type: number
+    type: sum
     sql: CASE
-         WHEN ${amadeus_error_code} IS NULL
-           AND ${amadeus_error_message} IS NOT NULL
-           AND ${amadeus_error_message} != 'upsell_already_called_for_package'
-         THEN 1 ELSE NULL
-       END ;;
+           WHEN ${amadeus_error_code} IS NULL
+             AND ${amadeus_error_message} IS NOT NULL
+             AND ${amadeus_error_message} != 'upsell_already_called_for_package'
+           THEN 1 ELSE 0
+         END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
   }
 
   measure: amadeus_errors {
-    type: number
+    type: sum
     sql: CASE
-         WHEN ${amadeus_error_code} IS NOT NULL
-         THEN 1 ELSE NULL
-       END ;;
+           WHEN ${amadeus_error_code} IS NOT NULL
+           THEN 1 ELSE 0
+         END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
   }
