@@ -152,8 +152,9 @@ view: checkout_with_upsell {
   # 🎯 Dimensions organized by source table (group_label)
 
   # --- Checkout ---
-  dimension: checkout_begin_checkout_timestamp {
-    type: date_time
+  dimension_group: checkout_begin_checkout_timestamp {
+    type: time
+    timeframes: [raw, date, week, month, quarter, year]
     sql: ${TABLE}.checkout_begin_checkout_timestamp ;;
     group_label: "1. Checkout"
   }
@@ -273,18 +274,21 @@ view: checkout_with_upsell {
     type: date_time
     sql: ${TABLE}.amadeus_created_at ;;
     group_label: "2. Amadeus Upsell"
+    hidden: yes
   }
 
   dimension: amadeus_search_id {
     type: string
     sql: ${TABLE}.amadeus_search_id ;;
     group_label: "2. Amadeus Upsell"
+    hidden: yes
   }
 
   dimension: amadeus_package_id {
     type: string
     sql: ${TABLE}.amadeus_package_id ;;
     group_label: "2. Amadeus Upsell"
+    hidden: yes
   }
 
   dimension: amadeus_error_code {
@@ -370,18 +374,21 @@ view: checkout_with_upsell {
     type: date_time
     sql: ${TABLE}.routehapp_created_at ;;
     group_label: "3. Routehappy"
+    hidden: yes
   }
 
   dimension: routehapp_search_id {
     type: string
     sql: ${TABLE}.routehapp_search_id ;;
     group_label: "3. Routehappy"
+    hidden: yes
   }
 
   dimension: routehapp_package_id {
     type: string
     sql: ${TABLE}.routehapp_package_id ;;
     group_label: "3. Routehappy"
+    hidden: yes
   }
 
   dimension: routehapp_packages_sent {
@@ -409,18 +416,21 @@ view: checkout_with_upsell {
     type: date_time
     sql: ${TABLE}.final_step_created_at ;;
     group_label: "4. Final Step Upsell"
+    hidden: yes
   }
 
   dimension: final_step_search_id {
     type: string
     sql: ${TABLE}.final_step_search_id ;;
     group_label: "4. Final Step Upsell"
+    hidden: yes
   }
 
   dimension: final_step_package_id {
     type: string
     sql: ${TABLE}.final_step_package_id ;;
     group_label: "4. Final Step Upsell"
+    hidden: yes
   }
 
   dimension: is_eligible_for_upgrade {
