@@ -145,7 +145,7 @@ view: checkout_with_upsell {
       AND (amadeus_upsell.rn = 1 OR amadeus_upsell.rn = 0)
       AND (routehappy.rn = 1 OR routehappy.rn = 0)
       AND (final_step.rn = 1 OR final_step.rn = 0)
-      AND total_checkouts.begin_checkout_timestamp >= subtractDays(today(), 1)
+      AND total_checkouts.begin_checkout_timestamp >= subtractDays(today(), 30)
       ;;
   }
 
