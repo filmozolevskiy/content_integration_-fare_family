@@ -22,59 +22,73 @@ view: checkout_with_upsell {
             flight_class,
             fare_class,
             trip_type,
-            ROW_NUMBER() OVER (PARTITION BY
-                                search_id,
-                                package_id,
-                                surfer_id,
-                                site_name,
-                                currency,
-                                affiliate_id,
-                                origin_airport,
-                                destination_airport,
-                                num_adults,
-                                num_children,
-                                num_infants,
-                                num_infants_seat,
-                                departure_date,
-                                return_date,
-                                flight_class,
-                                fare_class,
-                                trip_type ORDER BY begin_checkout_timestamp DESC) AS rn
-          FROM gtm_views.begin_checkout
-        ),
-        amadeus_upsell AS (
-          SELECT
-            created_at,
-            search_id,
-            package_id,
-            error_code,
-            error_message,
-            offers_returned,
-            ROW_NUMBER() OVER (PARTITION BY search_id, package_id, error_code, error_message, offers_returned ORDER BY created_at DESC) AS rn
-          FROM jupiter.jupiter_fare_priceupsellwithoutpnr
-        ),
-        routehappy AS (
-          SELECT
-            created_at,
-            search_id,
-            package_id,
-            itineraries,
-            error_message,
-            ROW_NUMBER() OVER (PARTITION BY search_id, package_id, itineraries, error_message ORDER BY created_at DESC) AS rn
-          FROM jupiter.jupiter_consolidated
-        ),
-        final_step AS (
-            SELECT
-                created_at,
+            ROW_NUMBER() OVER (
+              PARTITION BY
                 search_id,
                 package_id,
-                is_eligible_for_upgrade,
-                offers_returned,
-                offers_shown,
-                ROW_NUMBER() OVER (PARTITION BY search_id, package_id, is_eligible_for_upgrade, offers_returned,
-                    offers_shown ORDER BY created_at DESC) AS rn
-            FROM jupiter.jupiter_upsell_proposals
-        )
+                surfer_id,
+                site_name,
+                currency,
+                affiliate_id,
+                origin_airport,
+                destination_airport,
+                num_adults,
+                num_children,
+                num_infants,
+                num_infants_seat,
+                departure_date,
+                return_date,
+                flight_class,
+                fare_class,
+                trip_type
+              ORDER BY begin_checkout_timestamp DESC
+            ) AS rn
+          FROM gtm_views.begin_checkout
+        ),
+
+      amadeus_upsell AS (
+      SELECT
+      created_at,
+      search_id,
+      package_id,
+      error_code,
+      error_message,
+      offers_returned,
+      ROW_NUMBER() OVER (
+      PARTITION BY search_id, package_id, error_code, error_message, offers_returned
+      ORDER BY created_at DESC
+      ) AS rn
+      FROM jupiter.jupiter_fare_priceupsellwithoutpnr
+      ),
+
+      routehappy AS (
+      SELECT
+      created_at,
+      search_id,
+      package_id,
+      itineraries,
+      error_message,
+      ROW_NUMBER() OVER (
+      PARTITION BY search_id, package_id, itineraries, error_message
+      ORDER BY created_at DESC
+      ) AS rn
+      FROM jupiter.jupiter_consolidated
+      ),
+
+      final_step AS (
+      SELECT
+      created_at,
+      search_id,
+      package_id,
+      is_eligible_for_upgrade,
+      offers_returned,
+      offers_shown,
+      ROW_NUMBER() OVER (
+      PARTITION BY search_id, package_id, is_eligible_for_upgrade, offers_returned, offers_shown
+      ORDER BY created_at DESC
+      ) AS rn
+      FROM jupiter.jupiter_upsell_proposals
+      )
 
       SELECT
       total_checkouts.begin_checkout_timestamp AS checkout_begin_checkout_timestamp,
@@ -109,12 +123,12 @@ view: checkout_with_upsell {
       routehappy.itineraries AS routehapp_packages_sent,
       routehappy.error_message AS routehapp_errors,
 
-      final_step.created_at,
-      NULLIF(final_step.search_id, ''),
-      NULLIF(final_step.package_id, ''),
+      final_step.created_at AS final_step_created_at,
+      NULLIF(final_step.search_id, '') AS final_step_search_id,
+      NULLIF(final_step.package_id, '') AS final_step_package_id,
       final_step.is_eligible_for_upgrade,
-      final_step.offers_returned,
-      final_step.offers_shown
+      final_step.offers_returned AS final_step_offers_returned,
+      final_step.offers_shown AS final_step_offers_shown
 
       FROM total_checkouts
       LEFT JOIN amadeus_upsell
@@ -135,8 +149,9 @@ view: checkout_with_upsell {
       ;;
   }
 
-  # Dimensions
+  # 🎯 Dimensions organized by source table (group_label)
 
+  # --- Checkout ---
   dimension: checkout_begin_checkout_timestamp {
     type: date_time
     sql: ${TABLE}.checkout_begin_checkout_timestamp ;;
@@ -246,8 +261,7 @@ view: checkout_with_upsell {
     group_label: "Checkout"
   }
 
-  # 🎯 FOLDER: Amadeus Upsell fields
-
+  # --- Amadeus Upsell ---
   dimension: amadeus_created_at {
     type: date_time
     sql: ${TABLE}.amadeus_created_at ;;
@@ -290,8 +304,7 @@ view: checkout_with_upsell {
     group_label: "Amadeus Upsell"
   }
 
-  # 🎯 FOLDER: Routehappy fields
-
+  # --- Routehappy ---
   dimension: routehapp_created_at {
     type: date_time
     sql: ${TABLE}.routehapp_created_at ;;
@@ -326,5 +339,48 @@ view: checkout_with_upsell {
     type: yesno
     sql: ${routehapp_package_id} IS NOT NULL ;;
     group_label: "Routehappy"
+  }
+
+  # --- Final Step Upsell ---
+  dimension: final_step_created_at {
+    type: date_time
+    sql: ${TABLE}.final_step_created_at ;;
+    group_label: "Final Step Upsell"
+  }
+
+  dimension: final_step_search_id {
+    type: string
+    sql: ${TABLE}.final_step_search_id ;;
+    group_label: "Final Step Upsell"
+  }
+
+  dimension: final_step_package_id {
+    type: string
+    sql: ${TABLE}.final_step_package_id ;;
+    group_label: "Final Step Upsell"
+  }
+
+  dimension: is_eligible_for_upgrade {
+    type: yesno
+    sql: ${TABLE}.is_eligible_for_upgrade ;;
+    group_label: "Final Step Upsell"
+  }
+
+  dimension: final_step_offers_returned {
+    type: string
+    sql: ${TABLE}.final_step_offers_returned ;;
+    group_label: "Final Step Upsell"
+  }
+
+  dimension: final_step_offers_shown {
+    type: string
+    sql: ${TABLE}.final_step_offers_shown ;;
+    group_label: "Final Step Upsell"
+  }
+
+  dimension: has_final_step_call {
+    type: yesno
+    sql: ${final_step_package_id} IS NOT NULL ;;
+    group_label: "Final Step Upsell"
   }
 }
