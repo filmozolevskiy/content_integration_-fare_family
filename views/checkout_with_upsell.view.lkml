@@ -345,10 +345,20 @@ view: checkout_with_upsell {
     hidden: yes
   }
 
-  measure: amadeus_errors {
+  measure: amadeus_errors_codes {
     type: sum
     sql: CASE
            WHEN ${amadeus_error_code} IS NOT NULL
+           THEN 1 ELSE 0
+         END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: decimal_0
+  }
+
+  measure: amadeus_error_messages {
+    type: sum
+    sql: CASE
+           WHEN ${amadeus_error_message} IS NOT NULL
            THEN 1 ELSE 0
          END ;;
     group_label: "2. Amadeus Upsell"
@@ -390,9 +400,16 @@ view: checkout_with_upsell {
     value_format_name: percent_2
   }
 
-  measure: amadeus_errors_pct {
+  measure: amadeus_error_codes_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_errors} * 1.0 / ${number_of_checkouts} END ;;
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_errors_codes} * 1.0 / ${number_of_checkouts} END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: percent_2
+  }
+
+  measure: amadeus_error_messages_pct {
+    type: number
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_error_messages} * 1.0 / ${number_of_checkouts} END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
   }
