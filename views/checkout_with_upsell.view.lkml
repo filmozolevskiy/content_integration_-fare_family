@@ -48,6 +48,7 @@ view: checkout_with_upsell {
             ROW_NUMBER() OVER (
             PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
           FROM jupiter.jupiter_consolidated
+          WHERE scope = 'Upsells'
       ),
 
         final_step AS (
