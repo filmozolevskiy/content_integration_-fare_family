@@ -45,6 +45,7 @@ view: checkout_with_upsell {
             package_id,
             itineraries,
             error_message,
+            scope,
             ROW_NUMBER() OVER (
             PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
           FROM jupiter.jupiter_consolidated
@@ -96,6 +97,7 @@ view: checkout_with_upsell {
       NULLIF(routehappy.package_id, '') AS routehapp_package_id,
       routehappy.itineraries AS routehapp_packages_sent,
       routehappy.error_message AS routehapp_errors,
+      routehappy.scope as routehapp_scope,
 
       final_step.created_at AS final_step_created_at,
       NULLIF(final_step.search_id, '') AS final_step_search_id,
@@ -431,6 +433,12 @@ view: checkout_with_upsell {
     sql: ${TABLE}.routehapp_created_at ;;
     group_label: "3. Routehappy"
     hidden: yes
+  }
+
+  dimension: routehapp_scope {
+    type: string
+    sql: ${TABLE}.scope ;;
+    group_label: "3. Routehappy"
   }
 
   dimension: routehapp_search_id {
