@@ -284,9 +284,19 @@ view: checkout_with_upsell {
 
   dimension: has_amadeus_call {
     type: yesno
-    sql: ${amadeus_package_id} IS NOT NULL ;;
+    sql: (
+          ${amadeus_package_id} IS NOT NULL
+          AND (
+            ${amadeus_error_message} IS NULL
+            OR (
+              ${amadeus_error_code} IS NOT NULL
+              AND ${amadeus_error_message} IS NOT NULL
+            )
+          )
+        ) ;;
     group_label: "2. Amadeus Upsell"
   }
+
 
   measure: amadeus_calls_coverage {
     type: sum
