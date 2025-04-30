@@ -337,7 +337,6 @@ view: checkout_with_upsell {
     sql: CASE
            WHEN ${amadeus_error_code} IS NULL
              AND ${amadeus_error_message} IS NOT NULL
-             AND ${amadeus_error_message} != 'upsell_already_called_for_package'
            THEN 1 ELSE 0
          END ;;
     group_label: "2. Amadeus Upsell"
