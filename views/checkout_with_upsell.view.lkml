@@ -285,7 +285,7 @@ view: checkout_with_upsell {
   dimension: has_amadeus_call {
     type: yesno
     sql: (
-          ${amadeus_package_id} IS NOT NULL
+          ${amadeus_package_id} != ''
           AND (
             ${amadeus_error_message} IS NULL
             OR (
