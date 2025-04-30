@@ -301,7 +301,7 @@ view: checkout_with_upsell {
   measure: amadeus_calls_coverage {
     type: sum
     sql: CASE
-           WHEN ${has_amadeus_call} AND (${amadeus_error_message} IS NULL OR ${amadeus_error_code} IS NOT NULL)
+           WHEN ${has_amadeus_call}
            THEN 1 ELSE 0
          END ;;
     group_label: "2. Amadeus Upsell"
