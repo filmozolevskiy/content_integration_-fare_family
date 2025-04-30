@@ -426,9 +426,21 @@ view: checkout_with_upsell {
     group_label: "3. Routehappy"
   }
 
-  dimension: routehapp_errors {
+  dimension: routehapp_errors_raw {
     type: string
     sql: ${TABLE}.routehapp_errors ;;
+    group_label: "3. Routehappy"
+  }
+
+  dimension: routehapp_error_mapped {
+    type: string
+    sql: CASE
+         WHEN match(${routehapp_errors_raw}, '^Fare for flight .+ is not matched$')
+           THEN 'Fare for flight ### is not matched'
+         WHEN match(${routehapp_errors_raw}, '^Segment #[0-9]+ is not matched$')
+           THEN 'Segment ### is not matched'
+         ELSE ${routehapp_errors_raw}
+       END ;;
     group_label: "3. Routehappy"
   }
 
@@ -440,7 +452,7 @@ view: checkout_with_upsell {
 
   measure: routehappy_errors_count {
     type: sum
-    sql: CASE WHEN ${routehapp_errors} IS NOT NULL THEN 1 ELSE 0 END ;;
+    sql: CASE WHEN ${routehapp_error_mapped} IS NOT NULL THEN 1 ELSE 0 END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
   }
