@@ -1,10 +1,9 @@
 connection: "clickhouse-prod"
-connection: "ota"
 
-# include all the views
-include: "/views/**/*.view.lkml"
+# Only include views that use ClickHouse
+include: "/views/clickhouse/*.view.lkml"
 
-
-
-explore: checkout_with_upsell { }
-explore: upgrade_attempts { }
+# Define explores based on ClickHouse views
+explore: checkout_with_upsell {
+  label: "Checkout with Upsell"
+}
