@@ -19,8 +19,7 @@ view: upgrade_attempts {
       FROM bookability_contestant_attempts bca
       JOIN bookability_customer_attempt_upgrade_option bcauo
         ON bcauo.customer_attempt_id = bca.customer_attempt_id
-      WHERE
-        bca.date_created >= subtractDays(today(), 30)
+      WHERE date_created >= CURDATE() - INTERVAL 30 DAY
       ;;
   }
 
