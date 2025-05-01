@@ -5,5 +5,5 @@ include: "/views/clickhouse/*.view.lkml"
 
 # Define explores based on ClickHouse views
 explore: checkout_with_upsell {
-  label: "Checkout with Upsell"
+  label: "Upsell"
 }

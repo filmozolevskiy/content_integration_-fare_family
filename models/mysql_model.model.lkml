@@ -5,5 +5,5 @@ include: "/views/mysql/*.view.lkml"
 
 # Define explores based on MySQL views
 explore: upgrade_attempts {
-  label: "Failed Upgrade Attempts"
+  label: "Upsell Attempts"
 }
