@@ -95,8 +95,38 @@ view: upgrade_attempts {
     sql: ${TABLE}.gds_error_message ;;
   }
 
+  measure: successful_attempts {
+    type: sum
+    sql: CASE WHEN ${status} = 1 THEN 1 ELSE 0 END ;;
+    value_format_name: decimal_0
+    label: "Successful Attempts"
+  }
+
   measure: failed_attempts {
+    type: sum
+    sql: CASE WHEN ${status} = 0 THEN 1 ELSE 0 END ;;
+    value_format_name: decimal_0
+    label: "Failed Attempts"
+  }
+
+  measure: total_attempts {
     type: count
     value_format_name: decimal_0
+    label: "Total Attempts"
   }
+
+  measure: success_rate {
+    type: number
+    sql: CASE WHEN ${total_attempts} = 0 THEN NULL ELSE ${successful_attempts} * 1.0 / ${total_attempts} END ;;
+    value_format_name: percent_2
+    label: "Success Rate"
+  }
+
+  measure: failure_rate {
+    type: number
+    sql: CASE WHEN ${total_attempts} = 0 THEN NULL ELSE ${failed_attempts} * 1.0 / ${total_attempts} END ;;
+    value_format_name: percent_2
+    label: "Failure Rate"
+  }
+
 }
