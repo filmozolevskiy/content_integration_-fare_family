@@ -437,7 +437,7 @@ view: checkout_with_upsell {
 
   dimension: routehapp_scope {
     type: string
-    sql: ${TABLE}.scope ;;
+    sql: ${TABLE}.routehapp_scope ;;
     group_label: "3. Routehappy"
   }
 
