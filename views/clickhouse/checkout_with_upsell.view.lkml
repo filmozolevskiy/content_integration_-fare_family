@@ -130,7 +130,7 @@ view: checkout_with_upsell {
   # --- Checkout ---
   dimension_group: checkout_begin_checkout_timestamp {
     type: time
-    timeframes: [raw, date, week, month, quarter, year]
+    timeframes: [raw, hour, date, week, month, quarter, year]
     sql: ${TABLE}.checkout_begin_checkout_timestamp ;;
     group_label: "1. Checkout"
   }
