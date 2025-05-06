@@ -346,14 +346,18 @@ view: checkout_with_upsell {
   measure: amadeus_filtered_internally {
     type: sum
     sql: CASE
-           WHEN ${amadeus_error_code} IS NULL
-             (AND ${amadeus_error_message} IS NOT NULL OR ${amadeus_error_message} != 'upsell_already_called_for_package')
-           THEN 1 ELSE 0
-         END ;;
+         WHEN ${amadeus_error_code} IS NULL
+           AND (
+             ${amadeus_error_message} IS NOT NULL
+             OR ${amadeus_error_message} != 'upsell_already_called_for_package'
+           )
+         THEN 1 ELSE 0
+       END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
     hidden: yes
   }
+
 
   measure: amadeus_errors_codes {
     type: sum
