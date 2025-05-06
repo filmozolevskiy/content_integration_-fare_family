@@ -350,6 +350,7 @@ view: checkout_with_upsell {
            AND (
              ${amadeus_error_message} IS NOT NULL
              AND ${amadeus_error_message} != 'upsell_already_called_for_package'
+             AND ${amadeus_error_message} != 'upsell_already_called_for_upgraded_package'
            )
          THEN 1 ELSE 0
        END ;;
