@@ -300,7 +300,6 @@ view: checkout_with_upsell {
     group_label: "2. Amadeus Upsell"
   }
 
-
   measure: amadeus_calls_coverage {
     type: sum
     sql: CASE
@@ -320,7 +319,6 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
-    hidden: yes
   }
 
   measure: upgraded_checkouts {
