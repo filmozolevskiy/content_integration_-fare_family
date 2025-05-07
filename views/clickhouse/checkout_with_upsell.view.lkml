@@ -69,21 +69,21 @@ view: checkout_with_upsell {
       total_checkouts.begin_checkout_timestamp AS checkout_begin_checkout_timestamp,
       total_checkouts.search_id AS checkout_search_id,
       total_checkouts.package_id AS checkout_package_id,
-      total_checkouts.surfer_id,
-      total_checkouts.site_name,
-      total_checkouts.currency,
-      total_checkouts.affiliate_id,
-      total_checkouts.origin_airport,
-      total_checkouts.destination_airport,
-      total_checkouts.num_adults,
-      total_checkouts.num_children,
-      total_checkouts.num_infants,
-      total_checkouts.num_infants_seat,
-      total_checkouts.departure_date,
-      total_checkouts.return_date,
-      total_checkouts.flight_class,
-      total_checkouts.fare_class,
-      total_checkouts.trip_type,
+      total_checkouts.surfer_id AS surfer_id,
+      total_checkouts.site_name AS site_name,
+      total_checkouts.currency AS currency,
+      total_checkouts.affiliate_id AS affiliate_id,
+      total_checkouts.origin_airport AS origin_airport,
+      total_checkouts.destination_airport AS destination_airport,
+      total_checkouts.num_adults AS num_adults,
+      total_checkouts.num_children AS num_children,
+      total_checkouts.num_infants AS num_infants,
+      total_checkouts.num_infants_seat AS num_infants_seat,
+      total_checkouts.departure_date AS departure_date,
+      total_checkouts.return_date AS return_date,
+      total_checkouts.flight_class AS flight_class,
+      total_checkouts.fare_class AS fare_class,
+      total_checkouts.trip_type AS trip_type,
 
       amadeus_upsell.created_at AS amadeus_created_at,
       NULLIF(amadeus_upsell.search_id, '') AS amadeus_search_id,
@@ -130,7 +130,7 @@ view: checkout_with_upsell {
   # --- Checkout ---
   dimension_group: checkout_begin_checkout_timestamp {
     type: time
-    timeframes: [raw, date, week, month, quarter, year]
+    timeframes: [raw, hour, date, week, month, quarter, year]
     sql: ${TABLE}.checkout_begin_checkout_timestamp ;;
     group_label: "1. Checkout"
   }
@@ -300,7 +300,6 @@ view: checkout_with_upsell {
     group_label: "2. Amadeus Upsell"
   }
 
-
   measure: amadeus_calls_coverage {
     type: sum
     sql: CASE
@@ -320,7 +319,6 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
-    hidden: yes
   }
 
   measure: upgraded_checkouts {
@@ -348,14 +346,19 @@ view: checkout_with_upsell {
   measure: amadeus_filtered_internally {
     type: sum
     sql: CASE
-           WHEN ${amadeus_error_code} IS NULL
-             AND ${amadeus_error_message} IS NOT NULL
-           THEN 1 ELSE 0
-         END ;;
+         WHEN ${amadeus_error_code} IS NULL
+           AND (
+             ${amadeus_error_message} IS NOT NULL
+             AND ${amadeus_error_message} != 'upsell_already_called_for_package'
+             AND ${amadeus_error_message} != 'upsell_already_called_for_upgraded_package'
+           )
+         THEN 1 ELSE 0
+       END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
     hidden: yes
   }
+
 
   measure: amadeus_errors_codes {
     type: sum
@@ -483,6 +486,46 @@ view: checkout_with_upsell {
     type: yesno
     sql: ${routehapp_package_id} IS NOT NULL ;;
     group_label: "3. Routehappy"
+  }
+
+  dimension: RH_empty {
+    type: yesno
+    sql: ${routehapp_errors_raw} IS NOT NULL AND (${final_step_offers_shown} = 0 OR ${final_step_offers_shown} IS NULL) ;;
+    group_label: "3. Routehappy"
+  }
+
+  dimension: RH_error_not_empty {
+    type: yesno
+    sql: ${routehapp_errors_raw} IS NOT NULL AND ${final_step_offers_shown} != 0 ;;
+    group_label: "3. Routehappy"
+  }
+
+  measure: RH_empty_count {
+    type: sum
+    sql: CASE WHEN ${RH_empty} THEN 1 ELSE 0 END ;;
+    group_label: "3. Routehappy"
+    value_format_name: decimal_0
+  }
+
+  measure: RH_error_not_empty_count {
+    type: sum
+    sql: CASE WHEN ${RH_error_not_empty} THEN 1 ELSE 0 END ;;
+    group_label: "3. Routehappy"
+    value_format_name: decimal_0
+  }
+
+  measure: RH_empty_pct {
+    type: number
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${RH_empty_count} * 1.0 / ${number_of_checkouts} END ;;
+    group_label: "3. Routehappy"
+    value_format_name: percent_2
+  }
+
+  measure: RH_error_not_empty_pct {
+    type: number
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${RH_error_not_empty_count} * 1.0 / ${number_of_checkouts} END ;;
+    group_label: "3. Routehappy"
+    value_format_name: percent_2
   }
 
   measure: routehappy_errors_count {
