@@ -98,6 +98,7 @@ view: checkout_with_upsell {
       amadeus_upsell.validating_carriers AS amadeus_validating_carriers,
       amadeus_upsell.marketing_carriers AS amadeus_marketing_carriers,
       amadeus_upsell.operating_carriers AS amadeus_operating_carriers,
+      amadeus_upsell.gds AS original_gds,
       amadeus_upsell.gds_office_id AS original_gds_office_id,
 
       routehappy.created_at AS routehapp_created_at,
@@ -326,11 +327,18 @@ view: checkout_with_upsell {
     group_label: "2. Amadeus Upsell"
   }
 
+  dimension: original_gds {
+    type: string
+    sql: ${TABLE}.original_gds ;;
+    group_label: "2. Amadeus Upsell"
+  }
+
   dimension: original_gds_office_id {
     type: string
     sql: ${TABLE}.original_gds_office_id ;;
     group_label: "2. Amadeus Upsell"
   }
+
 
   measure: amadeus_calls_coverage {
     type: sum
