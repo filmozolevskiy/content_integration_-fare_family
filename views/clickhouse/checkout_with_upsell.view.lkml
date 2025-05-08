@@ -37,6 +37,7 @@ view: checkout_with_upsell {
             validating_carriers,
             marketing_carriers,
             operating_carriers,
+            gds_office_id,
             ROW_NUMBER() OVER (PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
           FROM jupiter.jupiter_fare_priceupsellwithoutpnr
         ),
@@ -97,6 +98,7 @@ view: checkout_with_upsell {
       amadeus_upsell.validating_carriers AS amadeus_validating_carriers,
       amadeus_upsell.marketing_carriers AS amadeus_marketing_carriers,
       amadeus_upsell.operating_carriers AS amadeus_operating_carriers,
+      amadeus_upsell.gds_office_id AS original_gds_office_id
 
       routehappy.created_at AS routehapp_created_at,
       NULLIF(routehappy.search_id, '') AS routehapp_search_id,
@@ -321,6 +323,12 @@ view: checkout_with_upsell {
   dimension: amadeus_operating_carriers {
     type: string
     sql: ${TABLE}.amadeus_operating_carriers ;;
+    group_label: "2. Amadeus Upsell"
+  }
+
+  dimension: original_gds_office_id {
+    type: string
+    sql: ${TABLE}.original_gds_office_id ;;
     group_label: "2. Amadeus Upsell"
   }
 
