@@ -34,6 +34,9 @@ view: checkout_with_upsell {
             error_code,
             error_message,
             offers_returned,
+            validating_carriers,
+            marketing_carriers,
+            operating_carriers,
             ROW_NUMBER() OVER (PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
           FROM jupiter.jupiter_fare_priceupsellwithoutpnr
         ),
@@ -91,6 +94,9 @@ view: checkout_with_upsell {
       amadeus_upsell.error_code AS amadeus_error_code,
       amadeus_upsell.error_message AS amadeus_error_message,
       amadeus_upsell.offers_returned AS amadeus_offers_returned,
+      amadeus_upsell.validating_carriers AS amadeus_validating_carriers,
+      amadeus_upsell.marketing_carriers AS amadeus_marketing_carriers,
+      amadeus_upsell.operating_carriers AS amadeus_operating_carriers,
 
       routehappy.created_at AS routehapp_created_at,
       NULLIF(routehappy.search_id, '') AS routehapp_search_id,
@@ -297,6 +303,24 @@ view: checkout_with_upsell {
             )
           )
         ) ;;
+    group_label: "2. Amadeus Upsell"
+  }
+
+  dimension: amadeus_validating_carriers {
+    type: string
+    sql: ${TABLE}.amadeus_validating_carriers ;;
+    group_label: "2. Amadeus Upsell"
+  }
+
+  dimension: amadeus_marketing_carriers {
+    type: string
+    sql: ${TABLE}.amadeus_marketing_carriers ;;
+    group_label: "2. Amadeus Upsell"
+  }
+
+  dimension: amadeus_operating_carriers {
+    type: string
+    sql: ${TABLE}.amadeus_operating_carriers ;;
     group_label: "2. Amadeus Upsell"
   }
 
