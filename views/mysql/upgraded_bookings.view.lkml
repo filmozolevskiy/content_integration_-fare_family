@@ -9,7 +9,7 @@ view: upgraded_bookings {
         b.cancel_reason
       FROM
         bookings b
-        JOIN booking_details bd ON b.id = bd.booking_id AND bd.is_upgraded_package = 1
+        JOIN booking_details bd ON b.id = bd.booking_id
       WHERE
         b.booking_date >= CURDATE() - INTERVAL 30 DAY
         AND EXISTS (SELECT 1 FROM booking_tasks WHERE booking_id = b.id AND type = 1)
