@@ -7,3 +7,7 @@ include: "/views/mysql/*.view.lkml"
 explore: upgrade_attempts {
   label: "Upsell Attempts"
 }
+
+explore: upgraded_bookings {
+  label: "Upsell Bookings"
+}
