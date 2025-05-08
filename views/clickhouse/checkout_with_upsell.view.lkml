@@ -98,7 +98,7 @@ view: checkout_with_upsell {
       amadeus_upsell.validating_carriers AS amadeus_validating_carriers,
       amadeus_upsell.marketing_carriers AS amadeus_marketing_carriers,
       amadeus_upsell.operating_carriers AS amadeus_operating_carriers,
-      amadeus_upsell.gds_office_id AS original_gds_office_id
+      amadeus_upsell.gds_office_id AS original_gds_office_id,
 
       routehappy.created_at AS routehapp_created_at,
       NULLIF(routehappy.search_id, '') AS routehapp_search_id,
