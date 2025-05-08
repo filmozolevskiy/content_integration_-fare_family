@@ -11,8 +11,8 @@ view: upgraded_bookings {
         bookings b
         JOIN booking_details bd ON b.id = bd.booking_id AND bd.is_upgraded_package = 1
       WHERE
-        b.booking_date>= CURDATE() - INTERVAL 30 DAY
-        and exists (select * from booking_tasks where booking_id = b.id and type = 1)
+        b.booking_date >= CURDATE() - INTERVAL 30 DAY
+        AND EXISTS (SELECT 1 FROM booking_tasks WHERE booking_id = b.id AND type = 1)
         AND b.is_test = 0
         AND (b.is_multiticket = 0 OR b.multiticket_relationship_type = 'master')
         AND (b.cancel_reason IS NULL OR b.cancel_reason IN ('customer_request', 'aborted', 'cc_decline', 'fraud'))
@@ -27,6 +27,7 @@ view: upgraded_bookings {
 
   dimension: booking_id {
     type: number
+    primary_key: yes
     sql: ${TABLE}.id ;;
   }
 
@@ -51,8 +52,10 @@ view: upgraded_bookings {
   }
 
   measure: upgraded_bookings_count {
-    type: number
-    sql: CASE WHEN ${is_upgraded_package} THEN ${booking_id} END ;;
+    type: count
+    filters:[
+      is_upgraded_package: "yes"
+      ]
   }
 
   measure: upgraded_bookings_percentage {
@@ -61,6 +64,4 @@ view: upgraded_bookings {
     value_format: "0.0%"
   }
 
-
-
-  }
+}
