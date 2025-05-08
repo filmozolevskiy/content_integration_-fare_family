@@ -37,6 +37,7 @@ view: checkout_with_upsell {
             validating_carriers,
             marketing_carriers,
             operating_carriers,
+            gds,
             gds_office_id,
             ROW_NUMBER() OVER (PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
           FROM jupiter.jupiter_fare_priceupsellwithoutpnr
