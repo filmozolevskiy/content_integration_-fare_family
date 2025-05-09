@@ -632,8 +632,12 @@ view: checkout_with_upsell {
   }
 
   dimension: is_eligible_for_upgrade {
-    type: yesno
-    sql: ${TABLE}.is_eligible_for_upgrade ;;
+    type: string
+    sql: CASE
+        WHEN ${TABLE}.is_eligible_for_upgrade = TRUE THEN 'YES'
+        WHEN ${TABLE}.is_eligible_for_upgrade = FALSE THEN 'NO'
+        ELSE 'UNKNOWN'
+       END ;;
     group_label: "4. Final Step Upsell"
   }
 
@@ -678,14 +682,14 @@ view: checkout_with_upsell {
 
   measure: final_step_eligible_count {
     type: sum
-    sql: CASE WHEN ${is_eligible_for_upgrade} = 'yes' THEN 1 ELSE 0 END ;;
+    sql: CASE WHEN ${is_eligible_for_upgrade} = 'YES' THEN 1 ELSE 0 END ;;
     group_label: "4. Final Step Upsell"
     value_format_name: decimal_0
   }
 
   measure: final_step_not_eligible_count {
     type: sum
-    sql: CASE WHEN ${is_eligible_for_upgrade} = 'no' THEN 1 ELSE 0 END ;;
+    sql: CASE WHEN ${is_eligible_for_upgrade} = 'NO' THEN 1 ELSE 0 END ;;
     group_label: "4. Final Step Upsell"
     value_format_name: decimal_0
   }
