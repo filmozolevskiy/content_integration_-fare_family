@@ -87,8 +87,8 @@ view: upgrade_attempts {
   dimension: is_multiticket {
     type: yesno
     sql: CASE
-        WHEN ${TABLE}.multiticket_part = 'master' THEN 'yes'
-        ELSE 'no'
+        WHEN ${TABLE}.multiticket_part = 'master' THEN true
+        ELSE false
        END ;;
   }
 
@@ -139,7 +139,7 @@ view: upgrade_attempts {
   measure: multiticket_count {
     type: sum
     sql: CASE
-        WHEN ${is_multiticket} = 'yes' THEN 1
+        WHEN ${is_multiticket} THEN 1
         ELSE 0
        END ;;
     value_format_name: decimal_0
