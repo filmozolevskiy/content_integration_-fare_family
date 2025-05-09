@@ -349,7 +349,6 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
-    hidden: yes
   }
 
   measure: repetitive_checkouts {
@@ -370,7 +369,6 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
-    hidden: yes
   }
 
   measure: amadeus_return_proportion {
@@ -381,7 +379,6 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
-    hidden: yes
   }
 
   measure: amadeus_filtered_internally {
