@@ -655,6 +655,13 @@ view: checkout_with_upsell {
     group_label: "4. Final Step Upsell"
   }
 
+  measure: has_final_step_call_count {
+    type: sum
+    sql: CASE WHEN ${has_final_step_call} THEN 1 ELSE 0 END ;;
+    group_label: "4. Final Step Upsell"
+    value_format_name: decimal_0
+  }
+
   measure: final_step_offers_returned_count {
     type: sum
     sql: CASE WHEN ${final_step_offers_returned} > 0 THEN 1 ELSE 0 END ;;
@@ -672,6 +679,13 @@ view: checkout_with_upsell {
   measure: final_step_eligible_count {
     type: sum
     sql: CASE WHEN ${is_eligible_for_upgrade} THEN 1 ELSE 0 END ;;
+    group_label: "4. Final Step Upsell"
+    value_format_name: decimal_0
+  }
+
+  measure: final_step_not_eligible_count {
+    type: sum
+    sql: CASE WHEN NOT ${is_eligible_for_upgrade} THEN 1 ELSE 0 END ;;
     group_label: "4. Final Step Upsell"
     value_format_name: decimal_0
   }
