@@ -528,26 +528,40 @@ view: checkout_with_upsell {
 
   dimension: RH_empty {
     type: yesno
-    sql: ${routehapp_errors_raw} IS NOT NULL AND (${final_step_offers_shown} = 0 OR ${final_step_offers_shown} IS NULL) ;;
+    sql: ${routehapp_errors_raw} IS NOT NULL
+        AND ${routehapp_errors_raw} != 'upsell_already_called_for_package'
+        AND (${final_step_offers_shown} = 0 OR ${final_step_offers_shown} IS NULL) ;;
     group_label: "3. Routehappy"
   }
 
   dimension: RH_error_not_empty {
     type: yesno
-    sql: ${routehapp_errors_raw} IS NOT NULL AND ${final_step_offers_shown} != 0 ;;
+    sql: ${routehapp_errors_raw} IS NOT NULL
+        AND ${routehapp_errors_raw} != 'upsell_already_called_for_package'
+        AND ${final_step_offers_shown} != 0 ;;
     group_label: "3. Routehappy"
   }
 
   measure: RH_empty_count {
     type: sum
-    sql: CASE WHEN ${RH_empty} THEN 1 ELSE 0 END ;;
+    sql:
+        CASE
+          WHEN ${RH_empty} AND ${routehapp_errors_raw} != 'upsell_already_called_for_package'
+          THEN 1
+          ELSE 0
+        END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
   }
 
   measure: RH_error_not_empty_count {
     type: sum
-    sql: CASE WHEN ${RH_error_not_empty} THEN 1 ELSE 0 END ;;
+    sql:
+        CASE
+          WHEN ${RH_error_not_empty} AND ${routehapp_errors_raw} != 'upsell_already_called_for_package'
+          THEN 1
+          ELSE 0
+        END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
   }
@@ -568,7 +582,13 @@ view: checkout_with_upsell {
 
   measure: routehappy_errors_count {
     type: sum
-    sql: CASE WHEN ${routehapp_error_mapped} IS NOT NULL THEN 1 ELSE 0 END ;;
+    sql:
+        CASE
+          WHEN ${routehapp_error_mapped} IS NOT NULL
+          AND ${routehapp_errors_raw} != 'upsell_already_called_for_package'
+          THEN 1
+          ELSE 0
+        END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
   }
@@ -582,7 +602,12 @@ view: checkout_with_upsell {
 
   measure: routehappy_sent_count {
     type: sum
-    sql: CASE WHEN ${routehapp_packages_sent} > 0 THEN 1 ELSE 0 END ;;
+    sql:
+        CASE
+          WHEN ${routehapp_packages_sent} > 0 OR ${routehapp_errors_raw} = 'upsell_already_called_for_package'
+          THEN 1
+          ELSE 0
+        END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
   }
@@ -603,7 +628,11 @@ view: checkout_with_upsell {
 
   measure: routehappy_sent_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${routehappy_sent_count} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0 THEN NULL
+        ELSE ${routehappy_sent_count} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
   }
