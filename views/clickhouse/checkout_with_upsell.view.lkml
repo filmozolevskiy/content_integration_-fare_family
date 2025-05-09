@@ -634,7 +634,7 @@ view: checkout_with_upsell {
   dimension: is_eligible_for_upgrade {
     type: yesno
     sql: CASE
-          WHEN LOWER(${TABLE}.is_eligible_for_upgrade) = 'true' THEN TRUE
+          WHEN ${TABLE}.is_eligible_for_upgrade = 'true' THEN TRUE
           WHEN NOT ${TABLE}.is_eligible_for_upgrade is false THEN FALSE
           ELSE NULL
          END ;;
