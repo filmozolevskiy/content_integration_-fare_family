@@ -512,8 +512,6 @@ view: checkout_with_upsell {
     type: string
     sql:
         CASE
-          WHEN ${routehapp_errors_raw} = 'upsell_already_called_for_package'
-          THEN 'Success'
           WHEN match(${routehapp_errors_raw}, '^Fare for flight .+ is not matched$')
           THEN 'Fare for flight ### is not matched'
           WHEN match(${routehapp_errors_raw}, '^Segment #[0-9]+ is not matched$')
