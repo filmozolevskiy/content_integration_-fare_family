@@ -581,7 +581,6 @@ view: checkout_with_upsell {
     sql: CASE WHEN ${has_routehappy_call} THEN 1 ELSE 0 END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
-    hidden: yes
   }
 
   measure: routehappy_sent_count {
