@@ -15,7 +15,7 @@ view: upgrade_attempts {
         bca.marketing_carriers,
         bca.multiticket_part,
         bca.exception,
-        bca.gds_error_message,
+        bca.gds_error_message
       FROM bookability_contestant_attempts bca
       JOIN bookability_customer_attempt_upgrade_option bcauo
         ON bcauo.customer_attempt_id = bca.customer_attempt_id
@@ -143,8 +143,7 @@ view: upgrade_attempts {
         ELSE 0
        END ;;
     value_format_name: decimal_0
-    label: "Master Multiticket Count"
-    group_label: "Multiticket"
+    label: "Multiticket Count"
   }
 
 
