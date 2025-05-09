@@ -634,8 +634,8 @@ view: checkout_with_upsell {
   dimension: is_eligible_for_upgrade {
     type: yesno
     sql: CASE
-          WHEN ${TABLE}.is_eligible_for_upgrade = 'true' THEN TRUE
           WHEN ${TABLE}.is_eligible_for_upgrade = 'false' THEN FALSE
+          WHEN not ${TABLE}.is_eligible_for_upgrade = 'false' THEN TRUE
           ELSE NULL
          END ;;
     group_label: "4. Final Step Upsell"
