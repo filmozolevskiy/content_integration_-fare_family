@@ -290,10 +290,16 @@ view: checkout_with_upsell {
   }
 
   dimension: amadeus_offers_returned {
-    type: string
-    sql: ${TABLE}.amadeus_offers_returned ;;
+    type: number
+    sql: CASE
+        WHEN ${amadeus_error_message} IN ('upsell_already_called_for_upgraded_package', 'upsell_already_called_for_package')
+             OR ${TABLE}.amadeus_offers_returned > 0
+        THEN ${TABLE}.amadeus_offers_returned
+        ELSE 0
+       END ;;
     group_label: "2. Amadeus Upsell"
   }
+
 
   dimension: has_amadeus_call {
     type: yesno
