@@ -660,7 +660,6 @@ view: checkout_with_upsell {
     sql: CASE WHEN ${final_step_offers_returned} > 0 THEN 1 ELSE 0 END ;;
     group_label: "4. Final Step Upsell"
     value_format_name: decimal_0
-    hidden: yes
   }
 
   measure: final_step_offers_shown_count {
@@ -668,7 +667,6 @@ view: checkout_with_upsell {
     sql: CASE WHEN ${final_step_offers_shown} > 0 THEN 1 ELSE 0 END ;;
     group_label: "4. Final Step Upsell"
     value_format_name: decimal_0
-    hidden: yes
   }
 
   measure: final_step_eligible_count {
@@ -676,7 +674,6 @@ view: checkout_with_upsell {
     sql: CASE WHEN ${is_eligible_for_upgrade} THEN 1 ELSE 0 END ;;
     group_label: "4. Final Step Upsell"
     value_format_name: decimal_0
-    hidden: yes
   }
 
   measure: final_step_offers_returned_pct {
