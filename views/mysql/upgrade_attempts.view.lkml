@@ -15,7 +15,7 @@ view: upgrade_attempts {
         bca.marketing_carriers,
         bca.multiticket_part,
         bca.exception,
-        bca.gds_error_message
+        bca.gds_error_message,
       FROM bookability_contestant_attempts bca
       JOIN bookability_customer_attempt_upgrade_option bcauo
         ON bcauo.customer_attempt_id = bca.customer_attempt_id
@@ -84,6 +84,14 @@ view: upgrade_attempts {
     sql: ${TABLE}.multiticket_part ;;
   }
 
+  dimension: is_multiticket {
+    type: yesno
+    sql: CASE
+        WHEN ${TABLE}.multiticket_part = 'master' THEN YES
+        ELSE NO
+       END ;;
+  }
+
   dimension: exception {
     type: string
     sql: ${TABLE}.exception ;;
@@ -127,5 +135,17 @@ view: upgrade_attempts {
     value_format_name: percent_2
     label: "Failure Rate"
   }
+
+  measure: multiticket_count {
+    type: sum
+    sql: CASE
+        WHEN ${is_multiticket} THEN 1
+        ELSE 0
+       END ;;
+    value_format_name: decimal_0
+    label: "Master Multiticket Count"
+    group_label: "Multiticket"
+  }
+
 
 }
