@@ -37,6 +37,8 @@ view: checkout_with_upsell {
             validating_carriers,
             marketing_carriers,
             operating_carriers,
+            gds,
+            gds_office_id,
             ROW_NUMBER() OVER (PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
           FROM jupiter.jupiter_fare_priceupsellwithoutpnr
         ),
@@ -97,6 +99,8 @@ view: checkout_with_upsell {
       amadeus_upsell.validating_carriers AS amadeus_validating_carriers,
       amadeus_upsell.marketing_carriers AS amadeus_marketing_carriers,
       amadeus_upsell.operating_carriers AS amadeus_operating_carriers,
+      amadeus_upsell.gds AS original_gds,
+      amadeus_upsell.gds_office_id AS original_gds_office_id,
 
       routehappy.created_at AS routehapp_created_at,
       NULLIF(routehappy.search_id, '') AS routehapp_search_id,
@@ -324,6 +328,19 @@ view: checkout_with_upsell {
     group_label: "2. Amadeus Upsell"
   }
 
+  dimension: original_gds {
+    type: string
+    sql: ${TABLE}.original_gds ;;
+    group_label: "2. Amadeus Upsell"
+  }
+
+  dimension: original_gds_office_id {
+    type: string
+    sql: ${TABLE}.original_gds_office_id ;;
+    group_label: "2. Amadeus Upsell"
+  }
+
+
   measure: amadeus_calls_coverage {
     type: sum
     sql: CASE
@@ -332,7 +349,6 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
-    hidden: yes
   }
 
   measure: repetitive_checkouts {
@@ -353,7 +369,6 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
-    hidden: yes
   }
 
   measure: amadeus_return_proportion {
@@ -364,7 +379,6 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
-    hidden: yes
   }
 
   measure: amadeus_filtered_internally {
@@ -564,7 +578,6 @@ view: checkout_with_upsell {
     sql: CASE WHEN ${has_routehappy_call} THEN 1 ELSE 0 END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
-    hidden: yes
   }
 
   measure: routehappy_sent_count {
@@ -572,7 +585,6 @@ view: checkout_with_upsell {
     sql: CASE WHEN ${routehapp_packages_sent} > 0 THEN 1 ELSE 0 END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
-    hidden: yes
   }
 
   measure: routehappy_errors_pct {
@@ -620,7 +632,11 @@ view: checkout_with_upsell {
 
   dimension: is_eligible_for_upgrade {
     type: yesno
-    sql: ${TABLE}.is_eligible_for_upgrade ;;
+    sql: CASE
+          WHEN ${TABLE}.is_eligible_for_upgrade = 'false' THEN FALSE
+          WHEN not ${TABLE}.is_eligible_for_upgrade = 'false' THEN TRUE
+          ELSE NULL
+         END ;;
     group_label: "4. Final Step Upsell"
   }
 
@@ -642,12 +658,18 @@ view: checkout_with_upsell {
     group_label: "4. Final Step Upsell"
   }
 
+  measure: has_final_step_call_count {
+    type: sum
+    sql: CASE WHEN ${has_final_step_call} THEN 1 ELSE 0 END ;;
+    group_label: "4. Final Step Upsell"
+    value_format_name: decimal_0
+  }
+
   measure: final_step_offers_returned_count {
     type: sum
     sql: CASE WHEN ${final_step_offers_returned} > 0 THEN 1 ELSE 0 END ;;
     group_label: "4. Final Step Upsell"
     value_format_name: decimal_0
-    hidden: yes
   }
 
   measure: final_step_offers_shown_count {
@@ -655,7 +677,6 @@ view: checkout_with_upsell {
     sql: CASE WHEN ${final_step_offers_shown} > 0 THEN 1 ELSE 0 END ;;
     group_label: "4. Final Step Upsell"
     value_format_name: decimal_0
-    hidden: yes
   }
 
   measure: final_step_eligible_count {
@@ -663,7 +684,13 @@ view: checkout_with_upsell {
     sql: CASE WHEN ${is_eligible_for_upgrade} THEN 1 ELSE 0 END ;;
     group_label: "4. Final Step Upsell"
     value_format_name: decimal_0
-    hidden: yes
+  }
+
+  measure: final_step_not_eligible_count {
+    type: sum
+    sql: CASE WHEN NOT ${is_eligible_for_upgrade} THEN 1 ELSE 0 END ;;
+    group_label: "4. Final Step Upsell"
+    value_format_name: decimal_0
   }
 
   measure: final_step_offers_returned_pct {
