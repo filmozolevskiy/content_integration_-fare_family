@@ -26,48 +26,48 @@ view: checkout_with_upsell {
           FROM gtm_views.begin_checkout
         ),
 
-        amadeus_upsell AS (
-          SELECT
-            created_at,
-            search_id,
-            package_id,
-            error_code,
-            error_message,
-            offers_returned,
-            validating_carriers,
-            marketing_carriers,
-            operating_carriers,
-            gds,
-            gds_office_id,
-            ROW_NUMBER() OVER (PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
-          FROM jupiter.jupiter_fare_priceupsellwithoutpnr
-        ),
-
-        routehappy AS (
-          SELECT
-            created_at,
-            search_id,
-            package_id,
-            itineraries,
-            error_message,
-            scope,
-            ROW_NUMBER() OVER (
-            PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
-          FROM jupiter.jupiter_consolidated
-          WHERE (scope = 'Upsells' or scope = '')
+      amadeus_upsell AS (
+      SELECT
+      created_at,
+      search_id,
+      package_id,
+      error_code,
+      error_message,
+      offers_returned,
+      validating_carriers,
+      marketing_carriers,
+      operating_carriers,
+      gds,
+      gds_office_id,
+      ROW_NUMBER() OVER (PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
+      FROM jupiter.jupiter_fare_priceupsellwithoutpnr
       ),
 
-        final_step AS (
-          SELECT
-            created_at,
-            search_id,
-            package_id,
-            is_eligible_for_upgrade,
-            offers_returned,
-            offers_shown,
-            ROW_NUMBER() OVER (
-            PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
-          FROM jupiter.jupiter_upsell_proposals
+      routehappy AS (
+      SELECT
+      created_at,
+      search_id,
+      package_id,
+      itineraries,
+      error_message,
+      scope,
+      ROW_NUMBER() OVER (
+      PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
+      FROM jupiter.jupiter_consolidated
+      WHERE (scope = 'Upsells' or scope = '')
+      ),
+
+      final_step AS (
+      SELECT
+      created_at,
+      search_id,
+      package_id,
+      is_eligible_for_upgrade,
+      offers_returned,
+      offers_shown,
+      ROW_NUMBER() OVER (
+      PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
+      FROM jupiter.jupiter_upsell_proposals
       )
 
       SELECT
@@ -383,12 +383,13 @@ view: checkout_with_upsell {
 
   measure: filtered_internally_other {
     type: sum
-    sql:
-      CASE
-        WHEN ${is_filtered_internally} AND ${amadeus_error_message} NOT IN ('upsell_already_called_for_upgraded_package', 'upsell_already_called_for_package')
-        THEN 1
-        ELSE 0
-      END ;;
+    sql: CASE
+         WHEN (
+           ${amadeus_error_message} NOT IN ('upsell_already_called_for_upgraded_package', 'upsell_already_called_for_package')
+           AND ${is_filtered_internally}
+         )
+         THEN 1 ELSE 0
+       END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
     description: "Count the number of times we didn't call Amadeus due to reasons other than 'upsell_already_called_for_*'."
@@ -648,7 +649,7 @@ view: checkout_with_upsell {
   dimension: RH_error_empty {
     type: yesno
     sql: ${routehapp_errors_raw} IS NOT NULL
-        AND (${final_step_offers_shown} = 0 OR ${final_step_offers_shown} IS NULL) ;;
+      AND (${final_step_offers_shown} = 0 OR ${final_step_offers_shown} IS NULL) ;;
     group_label: "3. Routehappy"
     description: "Feature flag for cases when RH returned an error and 0 options."
   }
@@ -656,7 +657,7 @@ view: checkout_with_upsell {
   dimension: RH_error_not_empty {
     type: yesno
     sql: ${routehapp_errors_raw} IS NOT NULL
-        AND ${final_step_offers_shown} > 0 ;;
+      AND ${final_step_offers_shown} > 0 ;;
     group_label: "3. Routehappy"
     description: "Feature flag for cases when RH returned an error and more than 0 options."
   }
