@@ -428,37 +428,64 @@ view: checkout_with_upsell {
 
   measure: amadeus_calls_coverage_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_calls_coverage} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0
+        THEN NULL
+        ELSE ${amadeus_calls_coverage} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
+    description: "Proportion of times we called Amadeus."
   }
 
   measure: repetitive_checkouts_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${repetitive_checkouts} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0
+        THEN NULL ELSE ${repetitive_checkouts} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
+    description: "Proportion of times we didn't call Amadeus for repetitive checkouts."
   }
 
   measure: upgraded_checkouts_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${upgraded_checkouts} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0
+        THEN NULL
+        ELSE ${upgraded_checkouts} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
+    description: "Proportion of times we didn't call Amadeus for upgraded checkouts."
   }
 
   measure: amadeus_return_proportion_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_return_proportion} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0
+        THEN NULL
+        ELSE ${amadeus_return_proportion} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
+    description: "Proportion of times we received options from Amadeus."
   }
 
   measure: amadeus_filtered_internally_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_filtered_internally} * 1.0 / ${number_of_checkouts} END ;;
+    sql: CASE
+         WHEN ${number_of_checkouts} = 0 THEN NULL
+         ELSE ${amadeus_filtered_internally} * 1.0 / ${number_of_checkouts}
+       END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
+    description: "Proportion of times the Amadeus call was filtered internally and not made."
   }
 
   measure: amadeus_error_codes_pct {
