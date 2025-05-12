@@ -348,7 +348,6 @@ view: checkout_with_upsell {
     group_label: "2. Amadeus Upsell"
   }
 
-
   measure: amadeus_calls_coverage {
     type: sum
     sql: CASE
@@ -380,6 +379,18 @@ view: checkout_with_upsell {
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
     description: "Count the number of times we didn't call Amadeus because for updated packages."
+  }
+
+  measure: filtered_internally_other {
+    type: sum
+    sql: CASE
+           WHEN ${amadeus_error_message} != 'upsell_already_called_for_upgraded_package'
+            OR ${amadeus_error_message} != 'upsell_already_called_for_package'
+           THEN 1 ELSE 0
+         END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: decimal_0
+    description: "Count the number of times we didn't call Amadeus because of other reasons."
   }
 
   measure: amadeus_return_proportion {
@@ -443,8 +454,8 @@ view: checkout_with_upsell {
     type: number
     sql:
       CASE
-        WHEN ${number_of_checkouts} = 0
-        THEN NULL ELSE ${repetitive_checkouts} * 1.0 / ${number_of_checkouts}
+        WHEN ${number_of_checkouts} = 0 THEN NULL
+        ELSE ${repetitive_checkouts} * 1.0 / ${number_of_checkouts}
       END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
@@ -462,6 +473,19 @@ view: checkout_with_upsell {
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
     description: "Proportion of times we didn't call Amadeus for upgraded checkouts."
+  }
+
+  measure: filtered_internally_other_pct {
+    type: number
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0
+        THEN NULL
+        ELSE ${filtered_internally_other} * 1.0 / ${number_of_checkouts}
+      END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: percent_2
+    description: "Proportion of times we didn't call Amadeus for other reasons."
   }
 
   measure: amadeus_return_proportion_pct {
