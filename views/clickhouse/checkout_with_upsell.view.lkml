@@ -817,20 +817,6 @@ view: checkout_with_upsell {
     value_format_name: decimal_0
   }
 
-  measure: final_step_eligible_count {
-    type: sum
-    sql: CASE WHEN ${is_eligible_for_upgrade} THEN 1 ELSE 0 END ;;
-    group_label: "4. Final Step Upsell"
-    value_format_name: decimal_0
-  }
-
-  measure: final_step_not_eligible_count {
-    type: sum
-    sql: CASE WHEN NOT ${is_eligible_for_upgrade} THEN 1 ELSE 0 END ;;
-    group_label: "4. Final Step Upsell"
-    value_format_name: decimal_0
-  }
-
   measure: final_step_offers_returned_pct {
     type: number
     sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${final_step_offers_returned_count} * 1.0 / ${number_of_checkouts} END ;;
@@ -844,13 +830,5 @@ view: checkout_with_upsell {
     group_label: "4. Final Step Upsell"
     value_format_name: percent_2
   }
-
-  measure: final_step_eligible_pct {
-    type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${final_step_eligible_count} * 1.0 / ${number_of_checkouts} END ;;
-    group_label: "4. Final Step Upsell"
-    value_format_name: percent_2
-  }
-
 
 }
