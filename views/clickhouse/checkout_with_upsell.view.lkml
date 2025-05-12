@@ -608,14 +608,14 @@ view: checkout_with_upsell {
     type: string
     sql:
         CASE
-          WHEN match(${routehapp_errors_raw}, '^Fare for flight .+ is not matched$')
+          WHEN match(${routehapp_errors}, '^Fare for flight .+ is not matched$')
           THEN 'Fare for flight ### is not matched'
-          WHEN match(${routehapp_errors_raw}, '^Segment #[0-9]+ is not matched$')
+          WHEN match(${routehapp_errors}, '^Segment #[0-9]+ is not matched$')
           THEN 'Segment ### is not matched'
-          ELSE ${routehapp_errors_raw}
+          ELSE ${routehapp_errors}
         END ;;
     group_label: "3. Routehappy"
-    description: "Errors we get from RouteHappy."
+    description: "Categories of errors we get from RouteHappy."
   }
 
   dimension: RH_empty {
