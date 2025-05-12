@@ -578,6 +578,16 @@ view: checkout_with_upsell {
     description: "Indicates whether a Routehappy call was made, excluding internally filtered cases."
   }
 
+  dimension: has_routehappy_call_2 {
+    type: yesno
+    sql:
+      ${routehapp_package_id} IS NOT NULL
+      AND NOT ${is_filtered_internally};;
+    group_label: "3. Routehappy"
+    description: "Indicates whether a Routehappy call was made, excluding internally filtered Amadeus calls."
+  }
+
+
   dimension: routehapp_error_mapped {
     type: string
     sql:
