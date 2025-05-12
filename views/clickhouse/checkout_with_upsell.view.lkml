@@ -748,7 +748,7 @@ view: checkout_with_upsell {
     description: "Count cases when we had options from Amadeus but didn't call RH."
   }
 
-  measure: routehappy_filtered_internally_pct {
+  measure: routehappy_internal_error_pct {
     type: number
     sql:
       CASE
