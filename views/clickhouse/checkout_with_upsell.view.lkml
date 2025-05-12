@@ -102,12 +102,12 @@ view: checkout_with_upsell {
       amadeus_upsell.gds AS original_gds,
       amadeus_upsell.gds_office_id AS original_gds_office_id,
 
-      NULLIF(routehappy.created_at, '') AS routehapp_created_at,
+      routehappy.created_at AS routehapp_created_at,
       NULLIF(routehappy.search_id, '') AS routehapp_search_id,
       NULLIF(routehappy.package_id, '') AS routehapp_package_id,
-      NULLIF(routehappy.itineraries, '') AS routehapp_packages_sent,
+      routehappy.itineraries AS routehapp_packages_sent,
       NULLIF(routehappy.error_message, '') AS routehapp_errors,
-      NULLIF(routehappy.scope, '') as routehapp_scope,
+      routehappy.scope as routehapp_scope,
 
       final_step.created_at AS final_step_created_at,
       NULLIF(final_step.search_id, '') AS final_step_search_id,
