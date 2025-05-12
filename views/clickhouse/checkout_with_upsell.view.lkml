@@ -384,8 +384,9 @@ view: checkout_with_upsell {
   measure: filtered_internally_other {
     type: sum
     sql: CASE
-           WHEN ${amadeus_error_message} != 'upsell_already_called_for_upgraded_package'
-            OR ${amadeus_error_message} != 'upsell_already_called_for_package'
+           WHEN (${amadeus_error_message} != 'upsell_already_called_for_upgraded_package'
+            OR ${amadeus_error_message} != 'upsell_already_called_for_package')
+            AND ${TABLE}.is_filtered_internally
            THEN 1 ELSE 0
          END ;;
     group_label: "2. Amadeus Upsell"
