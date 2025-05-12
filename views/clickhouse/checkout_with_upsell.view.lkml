@@ -291,7 +291,7 @@ view: checkout_with_upsell {
 
   dimension: amadeus_offers_returned {
     type: number
-    sql:{TABLE}.amadeus_offers_returned;;
+    sql:${TABLE}.amadeus_offers_returned;;
     group_label: "2. Amadeus Upsell"
   }
 
