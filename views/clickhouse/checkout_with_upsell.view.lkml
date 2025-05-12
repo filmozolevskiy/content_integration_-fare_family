@@ -548,23 +548,6 @@ view: checkout_with_upsell {
     description: "Number of packages sent to RouteHappy."
   }
 
-  dimension: routehapp_errors_raw {
-    type: string
-    sql: ${TABLE}.routehapp_errors ;;
-    group_label: "3. Routehappy"
-    description: "RouteHappy errors. Internal and External."
-  }
-
-  dimension: routehapp_is_filtered_internally {
-    type: yesno
-    sql: (
-          ${routehapp_packages_sent} < 1
-          AND ${routehapp_errors_raw} IS NOT NULL
-        ) ;;
-    group_label: "3. Routehappy"
-    description: "Indicates whether the Routehappy call was filtered internally. It counts cases when the number of options sent was 0 and routehapp_errors is not null."
-  }
-
   dimension: has_routehappy_call {
     type: yesno
     sql: (
@@ -592,7 +575,34 @@ view: checkout_with_upsell {
     description: "Indicates whether a Routehappy call was made, excluding internally filtered Amadeus calls."
   }
 
+  dimension: routehapp_errors_raw {
+    type: string
+    sql: ${TABLE}.routehapp_errors ;;
+    group_label: "3. Routehappy"
+    description: "RouteHappy errors. Internal and External."
+    hidden: yes
+  }
 
+  dimension: routehapp_is_filtered_internally {
+    type: yesno
+    sql: (
+          ${routehapp_packages_sent} < 1
+          AND ${routehapp_errors_raw} IS NOT NULL
+        ) ;;
+    group_label: "3. Routehappy"
+    description: "Indicates whether the Routehappy call was filtered internally. It counts cases when the number of options sent was 0 and routehapp_errors is not null."
+  }
+
+  dimension: routehapp_errors {
+    type: string
+    sql:
+      CASE
+        WHEN ${routehapp_packages_sent} > 0 THEN ${TABLE}.routehapp_errors
+        ELSE NULL
+      END ;;
+    group_label: "3. Routehappy"
+    description: "RouteHappy errors. Only errors we get from them when packages were sent."
+  }
 
   dimension: routehapp_error_mapped {
     type: string
@@ -605,6 +615,7 @@ view: checkout_with_upsell {
           ELSE ${routehapp_errors_raw}
         END ;;
     group_label: "3. Routehappy"
+    description: "Errors we get from RouteHappy."
   }
 
   dimension: RH_empty {
