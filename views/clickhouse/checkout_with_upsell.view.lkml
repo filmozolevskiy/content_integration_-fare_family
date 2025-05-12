@@ -393,7 +393,6 @@ view: checkout_with_upsell {
       END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
-    hidden: yes
     description: "Count the number of times we didn't call Amadeus for internal reasons."
   }
 
