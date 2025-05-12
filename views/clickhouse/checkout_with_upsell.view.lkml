@@ -642,8 +642,10 @@ view: checkout_with_upsell {
 
   dimension: RH_error_empty {
     type: yesno
-    sql: ${routehapp_errors_raw} IS NOT NULL
-      AND (${final_step_offers_shown} = 0 OR ${final_step_offers_shown} IS NULL) ;;
+    sql:
+      ${routehapp_errors_raw} IS NOT NULL
+      AND ${routehapp_packages_sent} > 0
+      AND ${final_step_offers_returned} = 0  ;;
     group_label: "3. Routehappy"
     description: "Feature flag for cases when RH returned an error and 0 options."
   }
@@ -651,7 +653,7 @@ view: checkout_with_upsell {
   dimension: RH_error_not_empty {
     type: yesno
     sql: ${routehapp_errors_raw} IS NOT NULL
-      AND ${final_step_offers_shown} > 0 ;;
+      AND ${final_step_offers_returned} > 0 ;;
     group_label: "3. Routehappy"
     description: "Feature flag for cases when RH returned an error and more than 0 options."
   }
