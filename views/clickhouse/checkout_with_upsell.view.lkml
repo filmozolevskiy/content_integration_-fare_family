@@ -291,14 +291,9 @@ view: checkout_with_upsell {
 
   dimension: amadeus_offers_returned {
     type: number
-    sql: CASE
-        WHEN ${amadeus_error_message} IN ('upsell_already_called_for_upgraded_package', 'upsell_already_called_for_package') THEN 1
-        ELSE ${TABLE}.amadeus_offers_returned
-       END ;;
+    sql:{TABLE}.amadeus_offers_returned;;
     group_label: "2. Amadeus Upsell"
   }
-
-
 
   dimension: has_amadeus_call {
     type: yesno
