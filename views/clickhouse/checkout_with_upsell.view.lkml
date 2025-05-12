@@ -305,6 +305,7 @@ view: checkout_with_upsell {
           )
         ) ;;
     group_label: "2. Amadeus Upsell"
+    description: "Feature Flag to see if we called Amadeus."
   }
 
   dimension: amadeus_validating_carriers {
@@ -346,6 +347,7 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
+    description: "Counts the number of Amadeus calls."
   }
 
   measure: repetitive_checkouts {
@@ -356,6 +358,7 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
+    description: "Count the number of times we didn't call Amadeus because we already have data."
   }
 
   measure: upgraded_checkouts {
@@ -366,6 +369,7 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
+    description: "Count the number of times we didn't call Amadeus because for updated packages."
   }
 
   measure: amadeus_return_proportion {
@@ -376,22 +380,21 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
+    description: "Count the number of times Amadeus returns offers."
   }
 
   measure: amadeus_filtered_internally {
     type: sum
-    sql: CASE
-         WHEN ${amadeus_error_code} IS NULL
-           AND (
-             ${amadeus_error_message} IS NOT NULL
-             AND ${amadeus_error_message} != 'upsell_already_called_for_package'
-             AND ${amadeus_error_message} != 'upsell_already_called_for_upgraded_package'
-           )
-         THEN 1 ELSE 0
-       END ;;
+    sql:
+      CASE
+        WHEN ${amadeus_error_code} IS NULL
+          AND ${amadeus_error_message} IS NOT NULL
+        THEN 1 ELSE 0
+      END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
     hidden: yes
+    description: "Count the number of times we didn't call Amadeus for internal reasons."
   }
 
 
