@@ -615,12 +615,15 @@ view: checkout_with_upsell {
     hidden: yes
   }
 
-  dimension: routehapp_is_filtered_internally {
+  dimension: routehapp_internal_error {
     type: yesno
-    sql:  ${routehapp_packages_sent} = 0
-            AND ${routehapp_errors_raw} IS NOT NULL ;;
+    sql: (
+      ${routehapp_packages_sent} = 0
+      AND NOT (${is_filtered_internally})
+      AND ${amadeus_offers_returned} > 0
+    ) ;;
     group_label: "3. Routehappy"
-    description: "Indicates whether the Routehappy call was filtered internally. It counts cases when the number of options sent was 0 and routehapp_errors is not null."
+    description: "Indicates when we received options from Amadeus, but didn't call to RH."
   }
 
   dimension: routehapp_error_mapped {
@@ -737,12 +740,12 @@ view: checkout_with_upsell {
     description: "Proportion of RH errors. Can be used for both internal and external."
   }
 
-  measure: routehappy_filtered_internally_count {
+  measure: routehappy_internal_error_count {
     type: sum
-    sql: CASE WHEN ${routehapp_is_filtered_internally} THEN 1 ELSE 0 END ;;
+    sql: CASE WHEN ${routehapp_internal_error} THEN 1 ELSE 0 END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
-    description: "Count cases when the Routehappy call was filtered internally."
+    description: "Count cases when we had options from Amadeus but didn't call RH."
   }
 
   measure: routehappy_filtered_internally_pct {
@@ -750,11 +753,11 @@ view: checkout_with_upsell {
     sql:
       CASE
         WHEN ${number_of_checkouts} = 0 THEN NULL
-        ELSE ${routehappy_filtered_internally_count} * 1.0 / ${number_of_checkouts}
+        ELSE ${routehappy_internal_error_count} * 1.0 / ${number_of_checkouts}
       END ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
-    description: "Proportion of cases when the Routehappy call was filtered internally based on the specified logic."
+    description: "Proportion of cases when we had options from Amadeus but didn't call RH."
   }
 
   measure: routehappy_calls_pct {
