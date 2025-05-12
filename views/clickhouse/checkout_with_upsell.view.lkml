@@ -558,11 +558,24 @@ view: checkout_with_upsell {
   dimension: routehapp_is_filtered_internally {
     type: yesno
     sql: (
-          ${routehapp_packages_sent} = 0
+          ${routehapp_packages_sent} < 1
           AND ${routehapp_errors_raw} IS NOT NULL
         ) ;;
     group_label: "3. Routehappy"
     description: "Indicates whether the Routehappy call was filtered internally. It counts cases when the number of options sent was 0 and routehapp_errors is not null."
+  }
+
+  dimension: has_routehappy_call {
+    type: yesno
+    sql: (
+          ${routehapp_package_id} IS NOT NULL
+          AND NOT (
+            ${routehapp_packages_sent} < 1
+            AND ${routehapp_errors_raw} IS NOT NULL
+          )
+        ) ;;
+    group_label: "3. Routehappy"
+    description: "Indicates whether a Routehappy call was made, excluding internally filtered cases."
   }
 
   dimension: routehapp_error_mapped {
@@ -575,12 +588,6 @@ view: checkout_with_upsell {
           THEN 'Segment ### is not matched'
           ELSE ${routehapp_errors_raw}
         END ;;
-    group_label: "3. Routehappy"
-  }
-
-  dimension: has_routehappy_call {
-    type: yesno
-    sql: ${routehapp_package_id} IS NOT NULL ;;
     group_label: "3. Routehappy"
   }
 
