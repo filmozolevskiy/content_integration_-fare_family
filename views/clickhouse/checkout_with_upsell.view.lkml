@@ -622,12 +622,8 @@ view: checkout_with_upsell {
 
   dimension: routehapp_is_filtered_internally {
     type: yesno
-    sql: (
-          (${routehapp_packages_sent} < 1
-            AND ${routehapp_errors_raw} IS NOT NULL
-          )
-            OR ${routehapp_errors_raw} = 'No upgrade options found or created'
-        ) ;;
+    sql:  ${routehapp_packages_sent} < 1
+            AND ${routehapp_errors_raw} IS NOT NULL ;;
     group_label: "3. Routehappy"
     description: "Indicates whether the Routehappy call was filtered internally. It counts cases when the number of options sent was 0 and routehapp_errors is not null."
   }
@@ -745,26 +741,6 @@ view: checkout_with_upsell {
     value_format_name: percent_2
     description: "Proportion of RH errors. Can be used for both internal and external."
   }
-
-  # measure: routehappy_filtered_internally_count {
-  #   type: sum
-  #   sql: CASE WHEN ${routehapp_is_filtered_internally} THEN 1 ELSE 0 END ;;
-  #   group_label: "3. Routehappy"
-  #   value_format_name: decimal_0
-  #   description: "Count cases when we didn't call RH for internal reasons."
-  # }
-
-  # measure: routehappy_filtered_internally_pct {
-  #   type: number
-  #   sql:
-  #     CASE
-  #       WHEN ${number_of_checkouts} = 0 THEN NULL
-  #       ELSE ${routehapp_is_filtered_internally} * 1.0 / ${number_of_checkouts}
-  #       END ;;
-  #   group_label: "3. Routehappy"
-  #   value_format_name: percent_2
-  #   description: "Proportion of cases when we didn't call RH for internal reasons."
-  # }
 
   measure: routehappy_filtered_internally_count {
     type: sum
