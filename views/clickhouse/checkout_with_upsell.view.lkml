@@ -722,14 +722,6 @@ view: checkout_with_upsell {
     description: "Count RH calls. It doesn't count repetitive calls or cases when we filter internally"
   }
 
-  measure: routehappy_filtered_internally_count {
-    type: sum
-    sql: CASE WHEN ${routehapp_is_filtered_internally} THEN 1 ELSE 0 END ;;
-    group_label: "3. Routehappy"
-    value_format_name: decimal_0
-    description: "Count cases when we didn't call RH for internal reasons."
-  }
-
   measure: routehappy_sent_count {
     type: sum
     sql:
@@ -754,17 +746,25 @@ view: checkout_with_upsell {
     description: "Proportion of RH errors. Can be used for both internal and external."
   }
 
-  measure: routehappy_filtered_internally_pct {
-    type: number
-    sql:
-      CASE
-        WHEN ${number_of_checkouts} = 0 THEN NULL
-        ELSE ${routehapp_is_filtered_internally} * 1.0 / ${number_of_checkouts}
-        END ;;
-    group_label: "3. Routehappy"
-    value_format_name: percent_2
-    description: "Proportion of cases when we didn't call RH for internal reasons."
-  }
+  # measure: routehappy_filtered_internally_count {
+  #   type: sum
+  #   sql: CASE WHEN ${routehapp_is_filtered_internally} THEN 1 ELSE 0 END ;;
+  #   group_label: "3. Routehappy"
+  #   value_format_name: decimal_0
+  #   description: "Count cases when we didn't call RH for internal reasons."
+  # }
+
+  # measure: routehappy_filtered_internally_pct {
+  #   type: number
+  #   sql:
+  #     CASE
+  #       WHEN ${number_of_checkouts} = 0 THEN NULL
+  #       ELSE ${routehapp_is_filtered_internally} * 1.0 / ${number_of_checkouts}
+  #       END ;;
+  #   group_label: "3. Routehappy"
+  #   value_format_name: percent_2
+  #   description: "Proportion of cases when we didn't call RH for internal reasons."
+  # }
 
   measure: routehappy_calls_pct {
     type: number
