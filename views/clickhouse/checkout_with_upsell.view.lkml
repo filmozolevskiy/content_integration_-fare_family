@@ -766,6 +766,26 @@ view: checkout_with_upsell {
   #   description: "Proportion of cases when we didn't call RH for internal reasons."
   # }
 
+  measure: routehappy_filtered_internally_count {
+    type: sum
+    sql: CASE WHEN ${routehapp_is_filtered_internally} THEN 1 ELSE 0 END ;;
+    group_label: "3. Routehappy"
+    value_format_name: decimal_0
+    description: "Count cases when the Routehappy call was filtered internally."
+  }
+
+  measure: routehappy_filtered_internally_pct {
+    type: number
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0 THEN NULL
+        ELSE ${routehappy_filtered_internally_count} * 1.0 / ${number_of_checkouts}
+      END ;;
+    group_label: "3. Routehappy"
+    value_format_name: percent_2
+    description: "Proportion of cases when the Routehappy call was filtered internally based on the specified logic."
+  }
+
   measure: routehappy_calls_pct {
     type: number
     sql:
