@@ -606,7 +606,6 @@ view: checkout_with_upsell {
     sql: ${TABLE}.routehapp_errors ;;
     group_label: "3. Routehappy"
     description: "RouteHappy errors. Internal and External. No filters."
-    hidden: yes
   }
 
   dimension: routehapp_errors {
