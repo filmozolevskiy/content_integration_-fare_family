@@ -102,12 +102,12 @@ view: checkout_with_upsell {
       amadeus_upsell.gds AS original_gds,
       amadeus_upsell.gds_office_id AS original_gds_office_id,
 
-      routehappy.created_at AS routehapp_created_at,
+      NULLIF(routehappy.created_at, '') AS routehapp_created_at,
       NULLIF(routehappy.search_id, '') AS routehapp_search_id,
       NULLIF(routehappy.package_id, '') AS routehapp_package_id,
-      routehappy.itineraries AS routehapp_packages_sent,
-      routehappy.error_message AS routehapp_errors,
-      routehappy.scope as routehapp_scope,
+      NULLIF(routehappy.itineraries, '') AS routehapp_packages_sent,
+      NULLIF(routehappy.error_message, '') AS routehapp_errors,
+      NULLIF(routehappy.scope, '') as routehapp_scope,
 
       final_step.created_at AS final_step_created_at,
       NULLIF(final_step.search_id, '') AS final_step_search_id,
@@ -574,15 +574,17 @@ view: checkout_with_upsell {
     description: "Number of packages sent to RouteHappy."
   }
 
+  dimension: routehapp_errors_raw {
+    type: string
+    sql: ${TABLE}.routehapp_errors ;;
+    group_label: "3. Routehappy"
+    description: "RouteHappy errors. Internal and External. No filters."
+  }
+
   dimension: has_routehappy_call {
     type: yesno
-    sql: (
-          ${routehapp_package_id} IS NOT NULL
-          AND NOT (
-            ${routehapp_packages_sent} < 1
-            AND ${routehapp_errors_raw} IS NOT NULL
-          )
-        ) ;;
+    sql: ${routehapp_package_id} IS NOT NULL
+          AND ${routehapp_packages_sent} > 0 ;;
     group_label: "3. Routehappy"
     description: "Indicates whether a Routehappy call was made, excluding internally filtered cases."
   }
@@ -599,13 +601,6 @@ view: checkout_with_upsell {
         ) ;;
     group_label: "3. Routehappy"
     description: "Indicates whether a Routehappy call was made, excluding internally filtered Amadeus calls."
-  }
-
-  dimension: routehapp_errors_raw {
-    type: string
-    sql: ${TABLE}.routehapp_errors ;;
-    group_label: "3. Routehappy"
-    description: "RouteHappy errors. Internal and External. No filters."
   }
 
   dimension: routehapp_errors {
