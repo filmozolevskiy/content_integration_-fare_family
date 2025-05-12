@@ -579,18 +579,8 @@ view: checkout_with_upsell {
     type: string
     sql: ${TABLE}.routehapp_errors ;;
     group_label: "3. Routehappy"
-    description: "RouteHappy errors. Internal and External."
+    description: "RouteHappy errors. Internal and External. No filters."
     hidden: yes
-  }
-
-  dimension: routehapp_is_filtered_internally {
-    type: yesno
-    sql: (
-          ${routehapp_packages_sent} < 1
-          AND ${routehapp_errors_raw} IS NOT NULL
-        ) ;;
-    group_label: "3. Routehappy"
-    description: "Indicates whether the Routehappy call was filtered internally. It counts cases when the number of options sent was 0 and routehapp_errors is not null."
   }
 
   dimension: routehapp_errors {
@@ -602,6 +592,17 @@ view: checkout_with_upsell {
       END ;;
     group_label: "3. Routehappy"
     description: "RouteHappy errors. Only errors we get from them when packages were sent."
+    hidden: yes
+  }
+
+  dimension: routehapp_is_filtered_internally {
+    type: yesno
+    sql: (
+          ${routehapp_packages_sent} < 1
+          AND ${routehapp_errors_raw} IS NOT NULL
+        ) ;;
+    group_label: "3. Routehappy"
+    description: "Indicates whether the Routehappy call was filtered internally. It counts cases when the number of options sent was 0 and routehapp_errors is not null."
   }
 
   dimension: routehapp_error_mapped {
@@ -618,51 +619,52 @@ view: checkout_with_upsell {
     description: "Categories of errors we get from RouteHappy."
   }
 
-  dimension: RH_empty {
+  dimension: RH_error_empty {
     type: yesno
     sql: ${routehapp_errors_raw} IS NOT NULL
-        AND ${routehapp_errors_raw} != 'upsell_already_called_for_package'
         AND (${final_step_offers_shown} = 0 OR ${final_step_offers_shown} IS NULL) ;;
     group_label: "3. Routehappy"
+    description: "Feature flag for cases when RH returned an error and 0 options."
   }
 
   dimension: RH_error_not_empty {
     type: yesno
     sql: ${routehapp_errors_raw} IS NOT NULL
-        AND ${routehapp_errors_raw} != 'upsell_already_called_for_package'
-        AND ${final_step_offers_shown} != 0 ;;
+        AND ${final_step_offers_shown} > 0 ;;
     group_label: "3. Routehappy"
+    description: "Feature flag for cases when RH returned an error and more than 0 options."
   }
 
-  measure: RH_empty_count {
+  measure: RH_error_empty_count {
     type: sum
     sql:
-        CASE
-          WHEN ${RH_empty} AND ${routehapp_errors_raw} != 'upsell_already_called_for_package'
-          THEN 1
-          ELSE 0
-        END ;;
+      CASE
+        WHEN ${RH_error_empty} THEN 1
+        ELSE 0
+      END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
+    description: "Count of cases when RH returned error with NO options."
   }
 
   measure: RH_error_not_empty_count {
     type: sum
     sql:
         CASE
-          WHEN ${RH_error_not_empty} AND ${routehapp_errors_raw} != 'upsell_already_called_for_package'
-          THEN 1
+          WHEN ${RH_error_not_empty} THEN 1
           ELSE 0
         END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
+    description: "Count of cases when RH returned error with options."
   }
 
-  measure: RH_empty_pct {
+  measure: RH_error_empty_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${RH_empty_count} * 1.0 / ${number_of_checkouts} END ;;
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${RH_error_empty_count} * 1.0 / ${number_of_checkouts} END ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
+    description: "Proortion of cases when RH returned error with NO options."
   }
 
   measure: RH_error_not_empty_pct {
@@ -670,19 +672,19 @@ view: checkout_with_upsell {
     sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${RH_error_not_empty_count} * 1.0 / ${number_of_checkouts} END ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
+    description: "Proportion of cases when RH returned error with options."
   }
 
   measure: routehappy_errors_count {
     type: sum
     sql:
         CASE
-          WHEN ${routehapp_error_mapped} IS NOT NULL
-          AND ${routehapp_errors_raw} != 'upsell_already_called_for_package'
-          THEN 1
+          WHEN ${routehapp_error_mapped} IS NOT NULL THEN 1
           ELSE 0
         END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
+    description: "Count RH errors. Can count both external and internal."
   }
 
   measure: routehappy_calls_count {
@@ -690,32 +692,43 @@ view: checkout_with_upsell {
     sql: CASE WHEN ${has_routehappy_call} THEN 1 ELSE 0 END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
+    description: "Count RH calls. It doesn't count repetitive calls or cases when we filter internally"
   }
 
   measure: routehappy_sent_count {
     type: sum
     sql:
         CASE
-          WHEN ${routehapp_packages_sent} > 0 OR ${routehapp_errors_raw} = 'upsell_already_called_for_package'
-          THEN 1
+          WHEN ${routehapp_packages_sent} > 0 THEN 1
           ELSE 0
         END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
+    description: "Count the cases when we sent options to RH."
   }
 
   measure: routehappy_errors_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${routehappy_errors_count} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0 THEN NULL
+        ELSE ${routehappy_errors_count} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
+    description: "Proportion of RH errors. Can be used for both internal and external."
   }
 
   measure: routehappy_calls_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${routehappy_calls_count} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0 THEN NULL
+        ELSE ${routehappy_calls_count} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
+    description: "Proportion of RH calls to checkouts."
   }
 
   measure: routehappy_sent_pct {
@@ -727,6 +740,7 @@ view: checkout_with_upsell {
       END ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
+    description: "Proportion of cases when we send options to RH."
   }
 
   # --- Final Step Upsell ---
@@ -759,18 +773,21 @@ view: checkout_with_upsell {
           ELSE NULL
          END ;;
     group_label: "4. Final Step Upsell"
+    hidden: yes
   }
 
   dimension: final_step_offers_returned {
     type: string
     sql: ${TABLE}.final_step_offers_returned ;;
     group_label: "4. Final Step Upsell"
+    description: "The number of offers returned from RH."
   }
 
   dimension: final_step_offers_shown {
     type: string
     sql: ${TABLE}.final_step_offers_shown ;;
     group_label: "4. Final Step Upsell"
+    description: "The number of offers shown to customer."
   }
 
   dimension: has_final_step_call {
