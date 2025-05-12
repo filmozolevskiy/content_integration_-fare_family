@@ -308,6 +308,16 @@ view: checkout_with_upsell {
     description: "Feature Flag to see if we called Amadeus."
   }
 
+  dimension: is_filtered_internally {
+    type: yesno
+    sql: (
+          ${amadeus_error_code} IS NULL
+          AND ${amadeus_error_message} IS NOT NULL
+        ) ;;
+    group_label: "2. Amadeus Upsell"
+    description: "Indicates whether the Amadeus call was filtered internally and not made."
+  }
+
   dimension: amadeus_validating_carriers {
     type: string
     sql: ${TABLE}.amadeus_validating_carriers ;;
@@ -386,16 +396,13 @@ view: checkout_with_upsell {
   measure: amadeus_filtered_internally {
     type: sum
     sql:
-      CASE
-        WHEN ${amadeus_error_code} IS NULL
-          AND ${amadeus_error_message} IS NOT NULL
-        THEN 1 ELSE 0
-      END ;;
+    CASE
+      WHEN ${is_filtered_internally} THEN 1 ELSE 0
+    END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
-    description: "Count the number of times we didn't call Amadeus for internal reasons."
+    description: "Count the number of times the Amadeus call was filtered internally."
   }
-
 
   measure: amadeus_errors_codes {
     type: sum
@@ -405,6 +412,7 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
+    description: "Errors received from Amadeus."
   }
 
   measure: amadeus_error_messages {
@@ -415,6 +423,7 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
+    description: "Error messages received from Amadeus and messages for internal filtering."
   }
 
   measure: amadeus_calls_coverage_pct {
