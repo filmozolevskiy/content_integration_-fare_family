@@ -301,10 +301,7 @@ view: checkout_with_upsell {
           ${amadeus_package_id} != ''
           AND (
             ${amadeus_error_message} IS NULL
-            OR (
-              ${amadeus_error_code} IS NOT NULL
-              AND ${amadeus_error_message} IS NOT NULL
-            )
+              OR ${amadeus_error_code} IS NOT NULL
           )
         ) ;;
     group_label: "2. Amadeus Upsell"
