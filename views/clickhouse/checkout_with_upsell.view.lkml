@@ -490,18 +490,28 @@ view: checkout_with_upsell {
 
   measure: amadeus_error_codes_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_errors_codes} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0 THEN NULL
+        ELSE ${amadeus_errors_codes} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
+    description: "Proportion of Amadeus erros."
   }
 
   measure: amadeus_error_messages_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_error_messages} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0 THEN NULL
+        ELSE ${amadeus_error_messages} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
+    description: "Proportion of Amadeus error messages. Including internal and external."
+    hidden: yes
   }
-
 
   # --- Routehappy fields  ---
   dimension: routehapp_created_at {
