@@ -384,14 +384,15 @@ view: checkout_with_upsell {
   measure: filtered_internally_other {
     type: sum
     sql: CASE
-           WHEN (${amadeus_error_message} != 'upsell_already_called_for_upgraded_package'
-            OR ${amadeus_error_message} != 'upsell_already_called_for_package')
-            AND ${TABLE}.is_filtered_internally
-           THEN 1 ELSE 0
-         END ;;
+         WHEN (
+           ${amadeus_error_message} NOT IN ('upsell_already_called_for_upgraded_package', 'upsell_already_called_for_package')
+           AND ${is_filtered_internally}
+         )
+         THEN 1 ELSE 0
+       END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
-    description: "Count the number of times we didn't call Amadeus because of other reasons."
+    description: "Count the number of times we didn't call Amadeus due to reasons other than 'upsell_already_called_for_*'."
   }
 
   measure: amadeus_return_proportion {
