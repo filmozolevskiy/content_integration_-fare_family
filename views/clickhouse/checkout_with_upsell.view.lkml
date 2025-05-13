@@ -626,6 +626,17 @@ view: checkout_with_upsell {
     description: "Indicates when we received options from Amadeus, but didn't call to RH."
   }
 
+  dimension: routehapp_no_options_loaded {
+    type: yesno
+    sql: (
+      ${routehapp_packages_sent} > 0
+      AND ${routehapp_errors_raw} IS NULL
+      AND ${final_step_offers_returned} = 0
+    ) ;;
+    group_label: "3. Routehappy"
+    description: "Indicates when we received options from RH, but were not able to extract them."
+  }
+
   dimension: routehapp_error_mapped {
     type: string
     sql:
