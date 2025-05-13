@@ -84,6 +84,14 @@ view: upgrade_attempts {
     sql: ${TABLE}.multiticket_part ;;
   }
 
+  dimension: is_multiticket {
+    type: yesno
+    sql: CASE
+        WHEN ${TABLE}.multiticket_part = 'master' THEN true
+        ELSE false
+       END ;;
+  }
+
   dimension: exception {
     type: string
     sql: ${TABLE}.exception ;;
@@ -127,5 +135,16 @@ view: upgrade_attempts {
     value_format_name: percent_2
     label: "Failure Rate"
   }
+
+  measure: multiticket_count {
+    type: sum
+    sql: CASE
+        WHEN ${is_multiticket} THEN 1
+        ELSE 0
+       END ;;
+    value_format_name: decimal_0
+    label: "Multiticket Count"
+  }
+
 
 }

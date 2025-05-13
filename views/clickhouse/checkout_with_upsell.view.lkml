@@ -26,48 +26,48 @@ view: checkout_with_upsell {
           FROM gtm_views.begin_checkout
         ),
 
-        amadeus_upsell AS (
-          SELECT
-            created_at,
-            search_id,
-            package_id,
-            error_code,
-            error_message,
-            offers_returned,
-            validating_carriers,
-            marketing_carriers,
-            operating_carriers,
-            gds,
-            gds_office_id,
-            ROW_NUMBER() OVER (PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
-          FROM jupiter.jupiter_fare_priceupsellwithoutpnr
-        ),
-
-        routehappy AS (
-          SELECT
-            created_at,
-            search_id,
-            package_id,
-            itineraries,
-            error_message,
-            scope,
-            ROW_NUMBER() OVER (
-            PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
-          FROM jupiter.jupiter_consolidated
-          WHERE (scope = 'Upsells' or scope = '')
+      amadeus_upsell AS (
+      SELECT
+      created_at,
+      search_id,
+      package_id,
+      error_code,
+      error_message,
+      offers_returned,
+      validating_carriers,
+      marketing_carriers,
+      operating_carriers,
+      gds,
+      gds_office_id,
+      ROW_NUMBER() OVER (PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
+      FROM jupiter.jupiter_fare_priceupsellwithoutpnr
       ),
 
-        final_step AS (
-          SELECT
-            created_at,
-            search_id,
-            package_id,
-            is_eligible_for_upgrade,
-            offers_returned,
-            offers_shown,
-            ROW_NUMBER() OVER (
-            PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
-          FROM jupiter.jupiter_upsell_proposals
+      routehappy AS (
+      SELECT
+      created_at,
+      search_id,
+      package_id,
+      itineraries,
+      error_message,
+      scope,
+      ROW_NUMBER() OVER (
+      PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
+      FROM jupiter.jupiter_consolidated
+      WHERE (scope = 'Upsells' or scope = '')
+      ),
+
+      final_step AS (
+      SELECT
+      created_at,
+      search_id,
+      package_id,
+      is_eligible_for_upgrade,
+      offers_returned,
+      offers_shown,
+      ROW_NUMBER() OVER (
+      PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
+      FROM jupiter.jupiter_upsell_proposals
       )
 
       SELECT
@@ -106,7 +106,7 @@ view: checkout_with_upsell {
       NULLIF(routehappy.search_id, '') AS routehapp_search_id,
       NULLIF(routehappy.package_id, '') AS routehapp_package_id,
       routehappy.itineraries AS routehapp_packages_sent,
-      routehappy.error_message AS routehapp_errors,
+      NULLIF(routehappy.error_message, '') AS routehapp_errors,
       routehappy.scope as routehapp_scope,
 
       final_step.created_at AS final_step_created_at,
@@ -290,8 +290,8 @@ view: checkout_with_upsell {
   }
 
   dimension: amadeus_offers_returned {
-    type: string
-    sql: ${TABLE}.amadeus_offers_returned ;;
+    type: number
+    sql:${TABLE}.amadeus_offers_returned;;
     group_label: "2. Amadeus Upsell"
   }
 
@@ -301,13 +301,35 @@ view: checkout_with_upsell {
           ${amadeus_package_id} != ''
           AND (
             ${amadeus_error_message} IS NULL
-            OR (
-              ${amadeus_error_code} IS NOT NULL
-              AND ${amadeus_error_message} IS NOT NULL
-            )
+              OR ${amadeus_error_code} IS NOT NULL
           )
         ) ;;
     group_label: "2. Amadeus Upsell"
+    description: "Feature Flag to see if we called Amadeus."
+  }
+
+  dimension: is_filtered_internally {
+    type: yesno
+    sql: (
+          ${amadeus_error_code} IS NULL
+          AND ${amadeus_error_message} IS NOT NULL
+        ) ;;
+    group_label: "2. Amadeus Upsell"
+    description: "Indicates whether the Amadeus call was filtered internally and not made."
+  }
+
+  dimension: is_repetitive_checkout {
+    type: yesno
+    sql: ${amadeus_error_message} = 'upsell_already_called_for_package' ;;
+    group_label: "2. Amadeus Upsell"
+    description: "Indicates whether this is repetitive checkout"
+  }
+
+  dimension: is_upgraded_checkout {
+    type: yesno
+    sql: ${amadeus_error_message} = 'upsell_already_called_for_upgraded_package' ;;
+    group_label: "2. Amadeus Upsell"
+    description: "Indicates whether this is upgraded checkout"
   }
 
   dimension: amadeus_validating_carriers {
@@ -340,7 +362,6 @@ view: checkout_with_upsell {
     group_label: "2. Amadeus Upsell"
   }
 
-
   measure: amadeus_calls_coverage {
     type: sum
     sql: CASE
@@ -349,6 +370,7 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
+    description: "Counts the number of Amadeus calls."
   }
 
   measure: repetitive_checkouts {
@@ -359,6 +381,7 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
+    description: "Count the number of times we didn't call Amadeus because we already have data."
   }
 
   measure: upgraded_checkouts {
@@ -367,6 +390,40 @@ view: checkout_with_upsell {
            WHEN ${amadeus_error_message} = 'upsell_already_called_for_upgraded_package'
            THEN 1 ELSE 0
          END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: decimal_0
+    description: "Count the number of times we didn't call Amadeus because for updated packages."
+  }
+
+
+  dimension: is_filtered_internally_other {
+    type: yesno
+    sql: (
+          ${amadeus_error_message} NOT IN ('upsell_already_called_for_upgraded_package', 'upsell_already_called_for_package')
+          AND ${is_filtered_internally}
+        ) ;;
+    group_label: "2. Amadeus Upsell"
+    hidden: yes
+  }
+
+
+  # measure: filtered_internally_other {
+  #   type: sum
+  #   sql: CASE
+  #       WHEN (
+  #         ${amadeus_error_message} NOT IN ('upsell_already_called_for_upgraded_package', 'upsell_already_called_for_package')
+  #         AND ${is_filtered_internally}
+  #       )
+  #       THEN 1 ELSE 0
+  #     END ;;
+  #   group_label: "2. Amadeus Upsell"
+  #   value_format_name: decimal_0
+  #   description: "Count the number of times we didn't call Amadeus due to reasons other than 'upsell_already_called_for_*'."
+  # }
+
+  measure: filtered_internally_other {
+    type: sum
+    sql: CASE WHEN ${is_filtered_internally_other} THEN 1 ELSE 0 END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
   }
@@ -379,24 +436,32 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
+    description: "Count the number of times Amadeus returns offers."
+  }
+
+  measure: amadeus_return_proportion_pct {
+    type: number
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0
+        THEN NULL
+        ELSE ${amadeus_return_proportion} * 1.0 / ${number_of_checkouts}
+      END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: percent_2
+    description: "Proportion of times we received options from Amadeus."
   }
 
   measure: amadeus_filtered_internally {
     type: sum
-    sql: CASE
-         WHEN ${amadeus_error_code} IS NULL
-           AND (
-             ${amadeus_error_message} IS NOT NULL
-             AND ${amadeus_error_message} != 'upsell_already_called_for_package'
-             AND ${amadeus_error_message} != 'upsell_already_called_for_upgraded_package'
-           )
-         THEN 1 ELSE 0
-       END ;;
+    sql:
+    CASE
+      WHEN ${is_filtered_internally} THEN 1 ELSE 0
+    END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
-    hidden: yes
+    description: "Count the number of times the Amadeus call was filtered internally."
   }
-
 
   measure: amadeus_errors_codes {
     type: sum
@@ -406,6 +471,7 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
+    description: "Errors received from Amadeus."
   }
 
   measure: amadeus_error_messages {
@@ -416,57 +482,95 @@ view: checkout_with_upsell {
          END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
+    description: "Error messages received from Amadeus and messages for internal filtering."
   }
 
   measure: amadeus_calls_coverage_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_calls_coverage} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0
+        THEN NULL
+        ELSE ${amadeus_calls_coverage} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
+    description: "Proportion of times we called Amadeus."
   }
 
   measure: repetitive_checkouts_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${repetitive_checkouts} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0 THEN NULL
+        ELSE ${repetitive_checkouts} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
+    description: "Proportion of times we didn't call Amadeus for repetitive checkouts."
   }
 
   measure: upgraded_checkouts_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${upgraded_checkouts} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0
+        THEN NULL
+        ELSE ${upgraded_checkouts} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
+    description: "Proportion of times we didn't call Amadeus for upgraded checkouts."
   }
 
-  measure: amadeus_return_proportion_pct {
+  measure: filtered_internally_other_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_return_proportion} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0
+        THEN NULL
+        ELSE ${filtered_internally_other} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
+    description: "Proportion of times we didn't call Amadeus for other reasons."
   }
 
   measure: amadeus_filtered_internally_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_filtered_internally} * 1.0 / ${number_of_checkouts} END ;;
+    sql: CASE
+         WHEN ${number_of_checkouts} = 0 THEN NULL
+         ELSE ${amadeus_filtered_internally} * 1.0 / ${number_of_checkouts}
+       END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
+    description: "Proportion of times the Amadeus call was filtered internally and not made."
   }
 
   measure: amadeus_error_codes_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_errors_codes} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0 THEN NULL
+        ELSE ${amadeus_errors_codes} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
+    description: "Proportion of Amadeus erros."
   }
 
   measure: amadeus_error_messages_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${amadeus_error_messages} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0 THEN NULL
+        ELSE ${amadeus_error_messages} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
+    description: "Proportion of Amadeus error messages. Including internal and external."
+    hidden: yes
   }
-
 
   # --- Routehappy fields  ---
   dimension: routehapp_created_at {
@@ -500,63 +604,153 @@ view: checkout_with_upsell {
     type: string
     sql: ${TABLE}.routehapp_packages_sent ;;
     group_label: "3. Routehappy"
+    description: "Number of packages sent to RouteHappy."
   }
 
   dimension: routehapp_errors_raw {
     type: string
     sql: ${TABLE}.routehapp_errors ;;
     group_label: "3. Routehappy"
-  }
-
-  dimension: routehapp_error_mapped {
-    type: string
-    sql: CASE
-         WHEN match(${routehapp_errors_raw}, '^Fare for flight .+ is not matched$')
-           THEN 'Fare for flight ### is not matched'
-         WHEN match(${routehapp_errors_raw}, '^Segment #[0-9]+ is not matched$')
-           THEN 'Segment ### is not matched'
-         ELSE ${routehapp_errors_raw}
-       END ;;
-    group_label: "3. Routehappy"
+    description: "RouteHappy errors. Internal and External. No filters."
   }
 
   dimension: has_routehappy_call {
     type: yesno
-    sql: ${routehapp_package_id} IS NOT NULL ;;
+    sql: ${routehapp_package_id} IS NOT NULL
+          AND ${routehapp_packages_sent} > 0 ;;
     group_label: "3. Routehappy"
+    description: "Indicates whether a Routehappy call was made, excluding internally filtered cases."
   }
 
-  dimension: RH_empty {
+  dimension: has_routehappy_call_2 {
     type: yesno
-    sql: ${routehapp_errors_raw} IS NOT NULL AND (${final_step_offers_shown} = 0 OR ${final_step_offers_shown} IS NULL) ;;
+    sql: (
+          ${routehapp_package_id} IS NOT NULL
+          AND NOT (
+            ${routehapp_packages_sent} < 1
+            AND ${routehapp_errors_raw} IS NOT NULL
+          )
+          AND NOT ${is_filtered_internally}
+        ) ;;
     group_label: "3. Routehappy"
+    description: "Indicates whether a Routehappy call was made, excluding internally filtered Amadeus calls."
+  }
+
+  dimension: routehapp_errors {
+    type: string
+    sql:
+      CASE
+        WHEN ${routehapp_packages_sent} > 0 THEN ${TABLE}.routehapp_errors
+        ELSE NULL
+      END ;;
+    group_label: "3. Routehappy"
+    description: "RouteHappy errors. Only errors we get from them when packages were sent."
+    hidden: yes
+  }
+
+  dimension: routehapp_internal_error {
+    type: yesno
+    sql: (
+      ${routehapp_packages_sent} = 0
+      AND NOT (${is_filtered_internally})
+      AND ${amadeus_offers_returned} > 0
+    ) ;;
+    group_label: "3. Routehappy"
+    description: "Indicates when we received options from Amadeus, but didn't call to RH."
+  }
+
+  dimension: routehapp_no_options_loaded {
+    type: yesno
+    sql: (
+      ${routehapp_packages_sent} > 0
+      AND ${routehapp_errors_raw} IS NULL
+      AND ${final_step_offers_returned} = 0
+    ) ;;
+    group_label: "3. Routehappy"
+    description: "Indicates when we received options from RH, but were not able to extract them."
+  }
+
+  measure: routehapp_no_options_loaded_count {
+    type: sum
+    sql: CASE WHEN ${routehapp_no_options_loaded} THEN 1 ELSE 0 END ;;
+    group_label: "3. Routehappy"
+    value_format_name: decimal_0
+    description: "Count of cases when we received options from RH, but were not able to extract them."
+  }
+
+  measure: routehapp_no_options_loaded_pct {
+    type: number
+    sql: CASE
+         WHEN ${number_of_checkouts} = 0 THEN NULL
+         ELSE ${routehapp_no_options_loaded_count} * 1.0 / ${number_of_checkouts}
+       END ;;
+    group_label: "3. Routehappy"
+    value_format_name: percent_2
+    description: "Percentage of cases when RH options were received but could not be extracted."
+  }
+
+  dimension: routehapp_error_mapped {
+    type: string
+    sql:
+        CASE
+          WHEN match(${routehapp_errors}, '^Fare for flight .+ is not matched$')
+          THEN 'Fare for flight ### is not matched'
+          WHEN match(${routehapp_errors}, '^Segment #[0-9]+ is not matched$')
+          THEN 'Segment ### is not matched'
+          ELSE ${routehapp_errors}
+        END ;;
+    group_label: "3. Routehappy"
+    description: "Categories of errors we get from RouteHappy."
+  }
+
+  dimension: RH_error_empty {
+    type: yesno
+    sql:
+      ${routehapp_errors_raw} IS NOT NULL
+      AND ${routehapp_packages_sent} > 0
+      AND ${final_step_offers_returned} = 0  ;;
+    group_label: "3. Routehappy"
+    description: "Feature flag for cases when RH returned an error and 0 options."
   }
 
   dimension: RH_error_not_empty {
     type: yesno
-    sql: ${routehapp_errors_raw} IS NOT NULL AND ${final_step_offers_shown} != 0 ;;
+    sql: ${routehapp_errors_raw} IS NOT NULL
+      AND ${final_step_offers_returned} > 0 ;;
     group_label: "3. Routehappy"
+    description: "Feature flag for cases when RH returned an error and more than 0 options."
   }
 
-  measure: RH_empty_count {
+  measure: RH_error_empty_count {
     type: sum
-    sql: CASE WHEN ${RH_empty} THEN 1 ELSE 0 END ;;
+    sql:
+      CASE
+        WHEN ${RH_error_empty} THEN 1
+        ELSE 0
+      END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
+    description: "Count of cases when RH returned error with NO options."
   }
 
   measure: RH_error_not_empty_count {
     type: sum
-    sql: CASE WHEN ${RH_error_not_empty} THEN 1 ELSE 0 END ;;
+    sql:
+        CASE
+          WHEN ${RH_error_not_empty} THEN 1
+          ELSE 0
+        END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
+    description: "Count of cases when RH returned error with options."
   }
 
-  measure: RH_empty_pct {
+  measure: RH_error_empty_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${RH_empty_count} * 1.0 / ${number_of_checkouts} END ;;
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${RH_error_empty_count} * 1.0 / ${number_of_checkouts} END ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
+    description: "Proortion of cases when RH returned error with NO options."
   }
 
   measure: RH_error_not_empty_pct {
@@ -564,13 +758,19 @@ view: checkout_with_upsell {
     sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${RH_error_not_empty_count} * 1.0 / ${number_of_checkouts} END ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
+    description: "Proportion of cases when RH returned error with options."
   }
 
   measure: routehappy_errors_count {
     type: sum
-    sql: CASE WHEN ${routehapp_error_mapped} IS NOT NULL THEN 1 ELSE 0 END ;;
+    sql:
+        CASE
+          WHEN ${routehapp_error_mapped} IS NOT NULL THEN 1
+          ELSE 0
+        END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
+    description: "Count RH errors. Can count both external and internal."
   }
 
   measure: routehappy_calls_count {
@@ -578,34 +778,75 @@ view: checkout_with_upsell {
     sql: CASE WHEN ${has_routehappy_call} THEN 1 ELSE 0 END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
+    description: "Count RH calls. It doesn't count repetitive calls or cases when we filter internally"
   }
 
   measure: routehappy_sent_count {
     type: sum
-    sql: CASE WHEN ${routehapp_packages_sent} > 0 THEN 1 ELSE 0 END ;;
+    sql:
+        CASE
+          WHEN ${routehapp_packages_sent} > 0 THEN 1
+          ELSE 0
+        END ;;
     group_label: "3. Routehappy"
     value_format_name: decimal_0
+    description: "Count the cases when we sent options to RH."
   }
 
   measure: routehappy_errors_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${routehappy_errors_count} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0 THEN NULL
+        ELSE ${routehappy_errors_count} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
+    description: "Proportion of RH errors. Can be used for both internal and external."
+  }
+
+  measure: routehappy_internal_error_count {
+    type: sum
+    sql: CASE WHEN ${routehapp_internal_error} THEN 1 ELSE 0 END ;;
+    group_label: "3. Routehappy"
+    value_format_name: decimal_0
+    description: "Count cases when we had options from Amadeus but didn't call RH."
+  }
+
+  measure: routehappy_internal_error_pct {
+    type: number
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0 THEN NULL
+        ELSE ${routehappy_internal_error_count} * 1.0 / ${number_of_checkouts}
+      END ;;
+    group_label: "3. Routehappy"
+    value_format_name: percent_2
+    description: "Proportion of cases when we had options from Amadeus but didn't call RH."
   }
 
   measure: routehappy_calls_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${routehappy_calls_count} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0 THEN NULL
+        ELSE ${routehappy_calls_count} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
+    description: "Proportion of RH calls to checkouts."
   }
 
   measure: routehappy_sent_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${routehappy_sent_count} * 1.0 / ${number_of_checkouts} END ;;
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0 THEN NULL
+        ELSE ${routehappy_sent_count} * 1.0 / ${number_of_checkouts}
+      END ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
+    description: "Proportion of cases when we send options to RH."
   }
 
   # --- Final Step Upsell ---
@@ -638,18 +879,28 @@ view: checkout_with_upsell {
           ELSE NULL
          END ;;
     group_label: "4. Final Step Upsell"
+    hidden: yes
   }
 
   dimension: final_step_offers_returned {
     type: string
     sql: ${TABLE}.final_step_offers_returned ;;
     group_label: "4. Final Step Upsell"
+    description: "The number of offers returned from RH."
+  }
+
+  measure: final_step_offers_returned_pct {
+    type: number
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${final_step_offers_returned_count} * 1.0 / ${number_of_checkouts} END ;;
+    group_label: "4. Final Step Upsell"
+    value_format_name: percent_2
   }
 
   dimension: final_step_offers_shown {
     type: string
     sql: ${TABLE}.final_step_offers_shown ;;
     group_label: "4. Final Step Upsell"
+    description: "The number of offers shown to customer."
   }
 
   dimension: has_final_step_call {
@@ -679,27 +930,6 @@ view: checkout_with_upsell {
     value_format_name: decimal_0
   }
 
-  measure: final_step_eligible_count {
-    type: sum
-    sql: CASE WHEN ${is_eligible_for_upgrade} THEN 1 ELSE 0 END ;;
-    group_label: "4. Final Step Upsell"
-    value_format_name: decimal_0
-  }
-
-  measure: final_step_not_eligible_count {
-    type: sum
-    sql: CASE WHEN NOT ${is_eligible_for_upgrade} THEN 1 ELSE 0 END ;;
-    group_label: "4. Final Step Upsell"
-    value_format_name: decimal_0
-  }
-
-  measure: final_step_offers_returned_pct {
-    type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${final_step_offers_returned_count} * 1.0 / ${number_of_checkouts} END ;;
-    group_label: "4. Final Step Upsell"
-    value_format_name: percent_2
-  }
-
   measure: final_step_offers_shown_pct {
     type: number
     sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${final_step_offers_shown_count} * 1.0 / ${number_of_checkouts} END ;;
@@ -707,12 +937,66 @@ view: checkout_with_upsell {
     value_format_name: percent_2
   }
 
-  measure: final_step_eligible_pct {
-    type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${final_step_eligible_count} * 1.0 / ${number_of_checkouts} END ;;
+  ##################### final step - no duplicates
+
+  dimension: has_final_step_offer_excluding_internal_filtering {
+    type: yesno
+    sql: ${final_step_offers_returned} > 0 AND NOT ${is_filtered_internally} ;;
     group_label: "4. Final Step Upsell"
-    value_format_name: percent_2
+    description: "True when offers were returned from Final Step and not filtered internally."
   }
 
+  measure: final_step_offers_returned_no_dupl_count {
+    type: sum
+    sql:
+      CASE
+        WHEN ${has_final_step_offer_excluding_internal_filtering} THEN 1
+      ELSE 0 END ;;
+    group_label: "4. Final Step Upsell"
+    value_format_name: decimal_0
+    description: "Count of RH offers returned, excluding those filtered internally."
+    hidden: yes
+  }
+
+  measure: final_step_offers_returned_no_dupl_pct {
+    type: number
+    sql: CASE
+        WHEN ${number_of_checkouts} = 0 THEN NULL
+        ELSE ${final_step_offers_returned_no_dupl_count} * 1.0 / ${number_of_checkouts}
+      END ;;
+    group_label: "4. Final Step Upsell"
+    value_format_name: percent_2
+    description: "Percentage of RH offers returned, excluding those filtered internally."
+  }
+
+  dimension: has_final_step_offers_shown_excluding_internal_filtering {
+    type: yesno
+    sql: ${final_step_offers_shown} > 0 AND NOT ${is_filtered_internally} ;;
+    group_label: "4. Final Step Upsell"
+    description: "True when offers were returned from Final Step and not filtered internally."
+  }
+
+  measure: final_step_offers_shown_excluding_internal_filtering_count {
+    type: sum
+    sql:
+      CASE
+        WHEN ${has_final_step_offers_shown_excluding_internal_filtering} THEN 1
+      ELSE 0 END ;;
+    group_label: "4. Final Step Upsell"
+    value_format_name: decimal_0
+    description: "Count of RH offers returned, excluding those filtered internally."
+    hidden: yes
+  }
+
+  measure: final_step_offers_shown_excluding_internal_filtering_pct {
+    type: number
+    sql: CASE
+        WHEN ${number_of_checkouts} = 0 THEN NULL
+        ELSE ${final_step_offers_shown_excluding_internal_filtering_count} * 1.0 / ${number_of_checkouts}
+      END ;;
+    group_label: "4. Final Step Upsell"
+    value_format_name: percent_2
+    description: "Percentage of RH offers returned, excluding those filtered internally."
+  }
 
 }
