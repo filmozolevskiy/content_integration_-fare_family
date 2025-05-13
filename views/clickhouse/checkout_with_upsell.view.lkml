@@ -318,6 +318,20 @@ view: checkout_with_upsell {
     description: "Indicates whether the Amadeus call was filtered internally and not made."
   }
 
+  dimension: is_repetitive_checkout {
+    type: yesno
+    sql: ${amadeus_error_message} = 'upsell_already_called_for_package' ;;
+    group_label: "2. Amadeus Upsell"
+    description: "Indicates whether this is repetitive checkout"
+  }
+
+  dimension: is_upgraded_checkout {
+    type: yesno
+    sql: ${amadeus_error_message} = 'upsell_already_called_for_upgraded_package' ;;
+    group_label: "2. Amadeus Upsell"
+    description: "Indicates whether this is upgraded checkout"
+  }
+
   dimension: amadeus_validating_carriers {
     type: string
     sql: ${TABLE}.amadeus_validating_carriers ;;
