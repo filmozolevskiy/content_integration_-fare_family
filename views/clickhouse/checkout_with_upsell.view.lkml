@@ -381,6 +381,7 @@ view: checkout_with_upsell {
     description: "Count the number of times we didn't call Amadeus because for updated packages."
   }
 
+
   dimension: is_filtered_internally_other {
     type: yesno
     sql: (
@@ -390,6 +391,7 @@ view: checkout_with_upsell {
     group_label: "2. Amadeus Upsell"
     hidden: yes
   }
+
 
   # measure: filtered_internally_other {
   #   type: sum
@@ -873,47 +875,12 @@ view: checkout_with_upsell {
     description: "The number of offers returned from RH."
   }
 
-  dimension: final_step_offers_returned_no_dupl {
+  measure: final_step_offers_returned_pct {
     type: number
-    sql:
-      CASE
-        WHEN ${TABLE}.final_step_offers_returned AND NOT ${filtered_internally_other} THEN ${final_step_offers_returned}
-        ELSE 0
-      END;;
+    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${final_step_offers_returned_count} * 1.0 / ${number_of_checkouts} END ;;
     group_label: "4. Final Step Upsell"
-    description: "The number of offers returned from RH, excluding filtered internally."
+    value_format_name: percent_2
   }
-
-  # measure: final_step_offers_returned_no_dupl_count {
-  #   type: sum
-  #   sql:
-  #     CASE
-  #       WHEN ${final_step_offers_returned_no_dupl} THEN 1
-  #       ELSE 0
-  #     END ;;
-  #   group_label: "4. Final Step Upsell"
-  #   value_format_name: decimal_0
-  #   description: "Count of RH offers returned, excluding those filtered internally."
-  # }
-
-
-  # measure: final_step_offers_returned_no_dupl_pct {
-  #   type: number
-  #   sql: CASE
-  #       WHEN ${number_of_checkouts} = 0 THEN NULL
-  #       ELSE ${final_step_offers_returned_no_dupl_count} * 1.0 / ${number_of_checkouts}
-  #     END ;;
-  #   group_label: "4. Final Step Upsell"
-  #   value_format_name: percent_2
-  #   description: "Percentage of RH offers returned, excluding those filtered internally."
-  # }
-
-  # measure: final_step_offers_returned_pct {
-  #   type: number
-  #   sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${final_step_offers_returned_count} * 1.0 / ${number_of_checkouts} END ;;
-  #   group_label: "4. Final Step Upsell"
-  #   value_format_name: percent_2
-  # }
 
   dimension: final_step_offers_shown {
     type: string
@@ -949,13 +916,6 @@ view: checkout_with_upsell {
     value_format_name: decimal_0
   }
 
-  measure: final_step_offers_returned_pct {
-    type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${final_step_offers_returned_count} * 1.0 / ${number_of_checkouts} END ;;
-    group_label: "4. Final Step Upsell"
-    value_format_name: percent_2
-  }
-
   measure: final_step_offers_shown_pct {
     type: number
     sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${final_step_offers_shown_count} * 1.0 / ${number_of_checkouts} END ;;
@@ -963,35 +923,72 @@ view: checkout_with_upsell {
     value_format_name: percent_2
   }
 
-  dimension: has_final_step_offer_excluding_internal {
-    type: yesno
-    sql: ${final_step_offers_returned} > 0 AND NOT ${filtered_internally_other} ;;
-    group_label: "4. Final Step Upsell"
-    description: "True when offers were returned from Final Step and not filtered internally."
-    hidden: yes
-  }
+  #####################
 
-  measure: final_step_offers_returned_no_dupl_count {
-    type: sum
-    sql:
-      CASE
-        WHEN ${has_final_step_offer_excluding_internal} THEN 1
-      ELSE 0 END ;;
-    group_label: "4. Final Step Upsell"
-    value_format_name: decimal_0
-    description: "Count of RH offers returned, excluding those filtered internally."
-    hidden: yes
-  }
+  # dimension: has_final_step_offer_excluding_internal {
+  #   type: yesno
+  #   sql: ${final_step_offers_returned} > 0 AND NOT ${filtered_internally_other} ;;
+  #   group_label: "4. Final Step Upsell"
+  #   description: "True when offers were returned from Final Step and not filtered internally."
+  #   hidden: yes
+  # }
 
-  measure: final_step_offers_returned_no_dupl_pct {
-    type: number
-    sql: CASE
-         WHEN ${number_of_checkouts} = 0 THEN NULL
-         ELSE ${final_step_offers_returned_no_dupl_count} * 1.0 / ${number_of_checkouts}
-       END ;;
-    group_label: "4. Final Step Upsell"
-    value_format_name: percent_2
-    description: "Percentage of RH offers returned, excluding those filtered internally."
-  }
+  # measure: final_step_offers_returned_no_dupl_count {
+  #   type: sum
+  #   sql:
+  #     CASE
+  #       WHEN ${has_final_step_offer_excluding_internal} THEN 1
+  #     ELSE 0 END ;;
+  #   group_label: "4. Final Step Upsell"
+  #   value_format_name: decimal_0
+  #   description: "Count of RH offers returned, excluding those filtered internally."
+  #   hidden: yes
+  # }
+
+  # measure: final_step_offers_returned_no_dupl_pct {
+  #   type: number
+  #   sql: CASE
+  #       WHEN ${number_of_checkouts} = 0 THEN NULL
+  #       ELSE ${final_step_offers_returned_no_dupl_count} * 1.0 / ${number_of_checkouts}
+  #     END ;;
+  #   group_label: "4. Final Step Upsell"
+  #   value_format_name: percent_2
+  #   description: "Percentage of RH offers returned, excluding those filtered internally."
+  # }
+
+  # dimension: final_step_offers_returned_no_dupl {
+  #   type: number
+  #   sql:
+  #     CASE
+  #       WHEN ${TABLE}.final_step_offers_returned AND NOT ${filtered_internally_other} THEN ${final_step_offers_returned}
+  #       ELSE 0
+  #     END;;
+  #   group_label: "4. Final Step Upsell"
+  #   description: "The number of offers returned from RH, excluding filtered internally."
+  # }
+
+  # measure: final_step_offers_returned_no_dupl_count {
+  #   type: sum
+  #   sql:
+  #     CASE
+  #       WHEN ${final_step_offers_returned_no_dupl} THEN 1
+  #       ELSE 0
+  #     END ;;
+  #   group_label: "4. Final Step Upsell"
+  #   value_format_name: decimal_0
+  #   description: "Count of RH offers returned, excluding those filtered internally."
+  # }
+
+
+  # measure: final_step_offers_returned_no_dupl_pct {
+  #   type: number
+  #   sql: CASE
+  #       WHEN ${number_of_checkouts} = 0 THEN NULL
+  #       ELSE ${final_step_offers_returned_no_dupl_count} * 1.0 / ${number_of_checkouts}
+  #     END ;;
+  #   group_label: "4. Final Step Upsell"
+  #   value_format_name: percent_2
+  #   description: "Percentage of RH offers returned, excluding those filtered internally."
+  # }
 
 }
