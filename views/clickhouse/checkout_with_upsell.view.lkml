@@ -925,13 +925,12 @@ view: checkout_with_upsell {
 
   #####################
 
-  # dimension: has_final_step_offer_excluding_internal {
-  #   type: yesno
-  #   sql: ${final_step_offers_returned} > 0 AND NOT ${filtered_internally_other} ;;
-  #   group_label: "4. Final Step Upsell"
-  #   description: "True when offers were returned from Final Step and not filtered internally."
-  #   hidden: yes
-  # }
+  dimension: has_final_step_offer_excluding_internal_filtering {
+    type: yesno
+    sql: ${final_step_offers_returned} > 0 AND NOT ${filtered_internally_other} ;;
+    group_label: "4. Final Step Upsell"
+    description: "True when offers were returned from Final Step and not filtered internally."
+  }
 
   # measure: final_step_offers_returned_no_dupl_count {
   #   type: sum
