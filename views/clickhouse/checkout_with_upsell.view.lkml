@@ -637,6 +637,25 @@ view: checkout_with_upsell {
     description: "Indicates when we received options from RH, but were not able to extract them."
   }
 
+  measure: routehapp_no_options_loaded_count {
+    type: sum
+    sql: CASE WHEN ${routehapp_no_options_loaded} THEN 1 ELSE 0 END ;;
+    group_label: "3. Routehappy"
+    value_format_name: decimal_0
+    description: "Count of cases when we received options from RH, but were not able to extract them."
+  }
+
+  measure: routehapp_no_options_loaded_pct {
+    type: number
+    sql: CASE
+         WHEN ${number_of_checkouts} = 0 THEN NULL
+         ELSE ${routehapp_no_options_loaded_count} * 1.0 / ${number_of_checkouts}
+       END ;;
+    group_label: "3. Routehappy"
+    value_format_name: percent_2
+    description: "Percentage of cases when RH options were received but could not be extracted."
+  }
+
   dimension: routehapp_error_mapped {
     type: string
     sql:
