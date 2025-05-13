@@ -856,6 +856,41 @@ view: checkout_with_upsell {
     description: "The number of offers returned from RH."
   }
 
+  dimension: final_step_offers_returned_no_dupl {
+    type: number
+    sql:
+      CASE
+        WHEN ${TABLE}.final_step_offers_returned AND NOT ${filtered_internally_other} THEN ${final_step_offers_returned}
+        ELSE 0
+      END;;
+    group_label: "4. Final Step Upsell"
+    description: "The number of offers returned from RH, excluding filtered internally."
+  }
+
+  measure: final_step_offers_returned_no_dupl_count {
+    type: sum
+    sql: CASE
+         WHEN ${final_step_offers_returned} > 0 AND NOT ${filtered_internally_other}
+         THEN 1
+         ELSE 0
+       END ;;
+    group_label: "4. Final Step Upsell"
+    value_format_name: decimal_0
+    description: "Count of offers returned from RH, excluding those filtered internally."
+  }
+
+  measure: final_step_offers_returned_no_dupl_pct {
+    type: number
+    sql: CASE
+         WHEN ${number_of_checkouts} = 0 THEN NULL
+         ELSE ${final_step_offers_returned_no_dupl_count} * 1.0 / ${number_of_checkouts}
+       END ;;
+    group_label: "4. Final Step Upsell"
+    value_format_name: percent_2
+    description: "Percentage of RH offers returned (excluding filtered internally) out of total checkouts."
+  }
+
+
   dimension: final_step_offers_shown {
     type: string
     sql: ${TABLE}.final_step_offers_shown ;;
