@@ -425,6 +425,19 @@ view: checkout_with_upsell {
     description: "Count the number of times Amadeus returns offers."
   }
 
+  measure: amadeus_return_proportion_pct {
+    type: number
+    sql:
+      CASE
+        WHEN ${number_of_checkouts} = 0
+        THEN NULL
+        ELSE ${amadeus_return_proportion} * 1.0 / ${number_of_checkouts}
+      END ;;
+    group_label: "2. Amadeus Upsell"
+    value_format_name: percent_2
+    description: "Proportion of times we received options from Amadeus."
+  }
+
   measure: amadeus_filtered_internally {
     type: sum
     sql:
@@ -507,19 +520,6 @@ view: checkout_with_upsell {
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
     description: "Proportion of times we didn't call Amadeus for other reasons."
-  }
-
-  measure: amadeus_return_proportion_pct {
-    type: number
-    sql:
-      CASE
-        WHEN ${number_of_checkouts} = 0
-        THEN NULL
-        ELSE ${amadeus_return_proportion} * 1.0 / ${number_of_checkouts}
-      END ;;
-    group_label: "2. Amadeus Upsell"
-    value_format_name: percent_2
-    description: "Proportion of times we received options from Amadeus."
   }
 
   measure: amadeus_filtered_internally_pct {
