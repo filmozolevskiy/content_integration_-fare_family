@@ -869,14 +869,10 @@ view: checkout_with_upsell {
 
   measure: final_step_offers_returned_no_dupl_count {
     type: sum
-    sql: CASE
-         WHEN ${final_step_offers_returned} > 0 AND NOT ${filtered_internally_other}
-         THEN 1
-         ELSE 0
-       END ;;
+    sql: CASE WHEN ${final_step_offers_returned_no_dupl} THEN 1 ELSE 0 END ;;
     group_label: "4. Final Step Upsell"
     value_format_name: decimal_0
-    description: "Count of offers returned from RH, excluding those filtered internally."
+    description: "Count of RH offers returned, excluding those filtered internally."
   }
 
   measure: final_step_offers_returned_no_dupl_pct {
@@ -887,9 +883,8 @@ view: checkout_with_upsell {
        END ;;
     group_label: "4. Final Step Upsell"
     value_format_name: percent_2
-    description: "Percentage of RH offers returned (excluding filtered internally) out of total checkouts."
+    description: "Percentage of RH offers returned, excluding those filtered internally."
   }
-
 
   dimension: final_step_offers_shown {
     type: string
