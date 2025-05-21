@@ -25,7 +25,7 @@ view: upgrade_attempts {
 
   dimension_group: date_created {
     type: time
-    timeframes: [raw, date, week, month, year]
+    timeframes: [raw,hour, date, week, month, year]
     sql: ${TABLE}.date_created ;;
   }
 

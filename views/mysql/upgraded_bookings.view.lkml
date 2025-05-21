@@ -21,7 +21,7 @@ view: upgraded_bookings {
 
   dimension_group: booking_date {
     type: time
-    timeframes: [raw, date, week, month, year]
+    timeframes: [raw, hour, date, week, month, year]
     sql: ${TABLE}.booking_date ;;
   }
 
