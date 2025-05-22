@@ -7,7 +7,7 @@ view: henrys_query {
         SUM(IF(response_payload->>'$.fare_family_options_short' <> '[[]]', 1, 0)) AS ff,
         SUM(IF(response_payload->>'$.fare_family_options_short' <> '[[]]', 1, 0)) / COUNT(*) AS proportion
       FROM fare_family_options_requests
-      WHERE created_date BETWEEN CURDATE() - INTERVAL 30 DAY AND CURDATE()
+      WHERE created_date BETWEEN CURDATE() - INTERVAL 30 DAY
       GROUP BY dd
       ;;
   }
