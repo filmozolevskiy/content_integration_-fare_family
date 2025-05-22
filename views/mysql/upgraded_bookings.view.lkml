@@ -64,4 +64,16 @@ view: upgraded_bookings {
     value_format: "0.0%"
   }
 
+  measure: multiticket_bookings_count {
+    type: count
+    filters: [multiticket_relationship_type: "master"]
+    value_format_name: decimal_0
+  }
+
+  measure: regular_bookings_count {
+    type: count
+    filters: [multiticket_relationship_type: "-master"]
+    value_format_name: decimal_0
+  }
+
 }
