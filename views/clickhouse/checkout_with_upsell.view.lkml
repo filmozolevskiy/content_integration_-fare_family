@@ -384,7 +384,7 @@ view: checkout_with_upsell {
   measure: repetitive_checkouts {
     type: sum
     sql: CASE
-           WHEN ${is_regular_checkout}
+           WHEN ${is_repetitive_checkout}
            THEN 1 ELSE 0
          END ;;
     group_label: "2. Amadeus Upsell"
