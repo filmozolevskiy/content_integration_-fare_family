@@ -408,7 +408,7 @@ view: checkout_with_upsell {
            WHEN ${is_regular_checkout}
            THEN 1 ELSE 0
          END ;;
-    group_label: "1. Amadeus Upsell"
+    group_label: "1. Checkout"
     value_format_name: decimal_0
     description: "Count the number of times we had a regular checkout."
   }
