@@ -66,13 +66,19 @@ view: upgraded_bookings {
 
   measure: multiticket_bookings_count {
     type: count
-    filters: [multiticket_relationship_type: "master"]
+    filters: [
+      multiticket_relationship_type: "master",
+      is_upgraded_package: "yes"
+    ]
     value_format_name: decimal_0
   }
 
   measure: regular_bookings_count {
     type: count
-    filters: [multiticket_relationship_type: "-master"]
+    filters: [
+      multiticket_relationship_type: "-master",
+      is_upgraded_package: "yes"
+      ]
     value_format_name: decimal_0
   }
 
