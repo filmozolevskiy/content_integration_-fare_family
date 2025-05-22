@@ -332,6 +332,13 @@ view: checkout_with_upsell {
     description: "Indicates whether this is upgraded checkout"
   }
 
+  dimension: is_regular_checkout {
+    type: yesno
+    sql: ${amadeus_error_message} NOT IN ('upsell_already_called_for_package', 'upsell_already_called_for_upgraded_package') ;;
+    group_label: "2. Amadeus Upsell"
+    description: "Indicates whether this is a regular (non-repetitive, non-upgraded) checkout"
+  }
+
   dimension: amadeus_validating_carriers {
     type: string
     sql: ${TABLE}.amadeus_validating_carriers ;;
@@ -376,7 +383,7 @@ view: checkout_with_upsell {
   measure: repetitive_checkouts {
     type: sum
     sql: CASE
-           WHEN ${amadeus_error_message} = 'upsell_already_called_for_package'
+           WHEN ${is_regular_checkout}
            THEN 1 ELSE 0
          END ;;
     group_label: "2. Amadeus Upsell"
@@ -387,7 +394,7 @@ view: checkout_with_upsell {
   measure: upgraded_checkouts {
     type: sum
     sql: CASE
-           WHEN ${amadeus_error_message} = 'upsell_already_called_for_upgraded_package'
+           WHEN ${is_upgraded_checkout}
            THEN 1 ELSE 0
          END ;;
     group_label: "2. Amadeus Upsell"
