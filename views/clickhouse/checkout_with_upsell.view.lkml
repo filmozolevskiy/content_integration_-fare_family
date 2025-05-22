@@ -334,7 +334,8 @@ view: checkout_with_upsell {
 
   dimension: is_regular_checkout {
     type: yesno
-    sql: ${amadeus_error_message} NOT IN ('upsell_already_called_for_package', 'upsell_already_called_for_upgraded_package') ;;
+    sql: ${amadeus_error_message} IS NULL
+      OR ${amadeus_error_message} NOT IN ('upsell_already_called_for_package', 'upsell_already_called_for_upgraded_package') ;;
     group_label: "2. Amadeus Upsell"
     description: "Indicates whether this is a regular (non-repetitive, non-upgraded) checkout"
   }
