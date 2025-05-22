@@ -402,6 +402,17 @@ view: checkout_with_upsell {
     description: "Count the number of times we didn't call Amadeus because for updated packages."
   }
 
+  measure: regular_checkouts {
+    type: sum
+    sql: CASE
+           WHEN ${is_regular_checkout}
+           THEN 1 ELSE 0
+         END ;;
+    group_label: "1. Amadeus Upsell"
+    value_format_name: decimal_0
+    description: "Count the number of times we had a regular checkout."
+  }
+
 
   dimension: is_filtered_internally_other {
     type: yesno
