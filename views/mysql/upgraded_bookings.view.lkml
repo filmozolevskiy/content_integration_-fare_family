@@ -6,7 +6,8 @@ view: upgraded_bookings {
         b.id,
         bd.is_upgraded_package,
         b.multiticket_relationship_type,
-        b.cancel_reason
+        b.cancel_reason,
+        b.currency
       FROM
         bookings b
         JOIN booking_details bd ON b.id = bd.booking_id
@@ -39,6 +40,11 @@ view: upgraded_bookings {
   dimension: multiticket_relationship_type {
     type: string
     sql: ${TABLE}.multiticket_relationship_type ;;
+  }
+
+  dimension: currency {
+    type: string
+    sql: ${TABLE}.currency ;;
   }
 
   dimension: cancel_reason {
