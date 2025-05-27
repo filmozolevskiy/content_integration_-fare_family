@@ -6,7 +6,8 @@ view: upgraded_bookings {
         b.id,
         bd.is_upgraded_package,
         b.multiticket_relationship_type,
-        b.cancel_reason
+        b.cancel_reason,
+        b.currency
       FROM
         bookings b
         JOIN booking_details bd ON b.id = bd.booking_id
@@ -21,7 +22,7 @@ view: upgraded_bookings {
 
   dimension_group: booking_date {
     type: time
-    timeframes: [raw, date, week, month, year]
+    timeframes: [raw, hour, date, week, month, year]
     sql: ${TABLE}.booking_date ;;
   }
 
@@ -39,6 +40,11 @@ view: upgraded_bookings {
   dimension: multiticket_relationship_type {
     type: string
     sql: ${TABLE}.multiticket_relationship_type ;;
+  }
+
+  dimension: currency {
+    type: string
+    sql: ${TABLE}.currency ;;
   }
 
   dimension: cancel_reason {
@@ -62,6 +68,24 @@ view: upgraded_bookings {
     type: number
     sql: ${upgraded_bookings_count} / NULLIF(${total_bookings}, 0) ;;
     value_format: "0.0%"
+  }
+
+  measure: multiticket_bookings_count {
+    type: count
+    filters: [
+      multiticket_relationship_type: "master",
+      is_upgraded_package: "yes"
+    ]
+    value_format_name: decimal_0
+  }
+
+  measure: regular_bookings_count {
+    type: count
+    filters: [
+      multiticket_relationship_type: "-master",
+      is_upgraded_package: "yes"
+      ]
+    value_format_name: decimal_0
   }
 
 }

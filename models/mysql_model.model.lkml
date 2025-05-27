@@ -11,3 +11,7 @@ explore: upgrade_attempts {
 explore: upgraded_bookings {
   label: "Upsell Bookings"
 }
+
+explore: henrys_query {
+  label: "Upsell Henry"
+}
