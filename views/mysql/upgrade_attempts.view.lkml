@@ -21,7 +21,7 @@ view: upgrade_attempts {
         ON bcauo.customer_attempt_id = bca.customer_attempt_id
       JOIN bookability_customer_attempts bcusta
         ON bcusta.id = bca.customer_attempt_id
-      WHERE bca.date_created >= CURDATE() - INTERVAL 2 DAY
+      WHERE bca.date_created >= CURDATE() - INTERVAL 30 DAY
       AND bcusta.source NOT LIKE '%staging%'
       ;;
   }
