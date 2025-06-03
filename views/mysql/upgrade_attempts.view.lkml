@@ -1,29 +1,48 @@
 view: upgrade_attempts {
   derived_table: {
     sql:
+      WITH upgrade_bounds AS (
+        SELECT
+          customer_attempt_id,
+          MIN(id) AS min_id_for_master,
+          MAX(id) AS max_id_for_slave
+        FROM bookability_customer_attempt_upgrade_option
+        GROUP BY customer_attempt_id
+      ),
+      contestants_with_match_id AS (
+        SELECT
+          bca.*,
+          CASE
+            WHEN bca.multiticket_part = 'master' THEN ub.min_id_for_master
+            WHEN bca.multiticket_part = 'slave' THEN ub.max_id
+            ELSE ub.min_id_for_master
+          END AS match_id
+        FROM bookability_contestant_attempts bca
+        JOIN upgrade_bounds ub ON bca.customer_attempt_id = ub.customer_attempt_id
+        WHERE bca.date_created >= CURDATE() - INTERVAL 30 DAY
+      )
       SELECT
-        bca.date_created AS date_created,
-        bca.search_hash,
-        bca.package_hash,
-        bca.booking_id,
-        bca.status AS status,
-        bca.gds,
-        bca.office_id,
-        bca.currency,
-        bca.fare_type,
-        bca.validating_carrier,
-        bca.marketing_carriers,
-        bca.multiticket_part,
-        bca.exception,
-        bca.gds_error_message
-      FROM bookability_contestant_attempts bca
+          cwm.date_created AS date_created,
+          cwm.search_hash,
+          cwm.package_hash,
+          cwm.booking_id,
+          cwm.status AS status,
+          cwm.gds,
+          cwm.office_id,
+          cwm.currency,
+          cwm.fare_type,
+          cwm.validating_carrier,
+          cwm.marketing_carriers,
+          cwm.multiticket_part,
+          cwm.exception,
+          cwm.gds_error_message
+      FROM contestants_with_match_id cwm
       JOIN bookability_customer_attempt_upgrade_option bcauo
-        ON bcauo.customer_attempt_id = bca.customer_attempt_id
+        ON bcauo.customer_attempt_id = cwm.customer_attempt_id
+        AND bcauo.id = cwm.match_id
       JOIN bookability_customer_attempts bcusta
-        ON bcusta.id = bca.customer_attempt_id
-      WHERE bca.date_created >= CURDATE() - INTERVAL 30 DAY
-      AND bcusta.source NOT LIKE '%staging%'
-      ;;
+        ON bcusta.id = cwm.customer_attempt_id
+      WHERE bcusta.source NOT LIKE '%staging%';;
   }
 
   dimension_group: date_created {
