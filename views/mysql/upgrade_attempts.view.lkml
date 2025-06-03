@@ -41,8 +41,8 @@ view: upgrade_attempts {
         ON bcauo.customer_attempt_id = cwm.customer_attempt_id
         AND bcauo.id = cwm.match_id
       JOIN bookability_customer_attempts bcusta
-        ON bcusta.id = cwm.customer_attempt_id
-      WHERE bcusta.source NOT LIKE '%staging%';;
+        ON bcusta.id = cwm.customer_attempt_id;;
+      # WHERE bcusta.source NOT LIKE '%staging%';;
   }
 
   dimension_group: date_created {
