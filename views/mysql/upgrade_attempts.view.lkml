@@ -14,7 +14,7 @@ view: upgrade_attempts {
           bca.*,
           CASE
             WHEN bca.multiticket_part = 'master' THEN ub.min_id_for_master
-            WHEN bca.multiticket_part = 'slave' THEN ub.max_id
+            WHEN bca.multiticket_part = 'slave' THEN ub.max_id_for_slave
             ELSE ub.min_id_for_master
           END AS match_id
         FROM bookability_contestant_attempts bca
