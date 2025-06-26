@@ -447,12 +447,24 @@ view: checkout_with_upsell {
     value_format_name: decimal_0
   }
 
+  # measure: amadeus_return_proportion {
+  #   type: sum
+  #   sql: CASE
+  #         WHEN ${amadeus_offers_returned} > 0
+  #         THEN 1 ELSE 0
+  #       END ;;
+  #   group_label: "2. Amadeus Upsell"
+  #   value_format_name: decimal_0
+  #   description: "Count the number of times Amadeus returns offers."
+  # }
+
   measure: amadeus_return_proportion {
     type: sum
     sql: CASE
-           WHEN ${amadeus_offers_returned} > 0
-           THEN 1 ELSE 0
-         END ;;
+         WHEN ${amadeus_offers_returned} > 0
+              OR ${routehapp_errors_raw} LIKE 'Only one upgrade option available%'
+         THEN 1 ELSE 0
+       END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
     description: "Count the number of times Amadeus returns offers."
