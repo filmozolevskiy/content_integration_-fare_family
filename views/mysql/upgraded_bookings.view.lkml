@@ -5,6 +5,7 @@ view: upgraded_bookings {
         b.booking_date,
         b.id,
         bd.is_upgraded_package,
+        b.validating_carrier,
         b.multiticket_relationship_type,
         b.cancel_reason,
         b.currency
@@ -40,6 +41,11 @@ view: upgraded_bookings {
   dimension: multiticket_relationship_type {
     type: string
     sql: ${TABLE}.multiticket_relationship_type ;;
+  }
+
+  dimension: validating_carrier {
+    type: string
+    sql: ${TABLE}.validating_carrier ;;
   }
 
   dimension: currency {
