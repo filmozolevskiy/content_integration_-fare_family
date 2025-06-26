@@ -70,6 +70,15 @@ view: upgraded_bookings {
       ]
   }
 
+  measure: nk_bundles_count {
+    type: count
+    filters: [
+      is_upgraded_package: "yes",
+      validating_carrier: "NK"
+    ]
+    value_format_name: decimal_0
+  }
+
   measure: upgraded_bookings_percentage {
     type: number
     sql: ${upgraded_bookings_count} / NULLIF(${total_bookings}, 0) ;;
