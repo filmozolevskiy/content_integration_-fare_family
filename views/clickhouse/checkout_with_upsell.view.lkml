@@ -462,12 +462,12 @@ view: checkout_with_upsell {
     type: sum
     sql: CASE
          WHEN ${amadeus_offers_returned} > 0
-              OR ${routehapp_errors_raw} LIKE 'Only one upgrade option available%'
+              OR (${amadeus_offers_returned} = 0 AND ${routehapp_errors_raw} LIKE 'Only one upgrade option available%')
          THEN 1 ELSE 0
        END ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: decimal_0
-    description: "Count the number of times Amadeus returns offers."
+    description: "Count of cases where Amadeus returned offers or error suggests only one upgrade option."
   }
 
   measure: amadeus_return_proportion_pct {
