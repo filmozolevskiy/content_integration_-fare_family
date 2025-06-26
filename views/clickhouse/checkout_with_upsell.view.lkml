@@ -462,7 +462,11 @@ view: checkout_with_upsell {
     type: sum
     sql: CASE
          WHEN ${amadeus_offers_returned} > 0
-              OR (${amadeus_offers_returned} = 0 AND ${routehapp_errors_raw} LIKE 'Only one upgrade option available%' AND ${has_amadeus_call})
+              OR (${amadeus_offers_returned} = 0
+                    AND ${routehapp_errors_raw} LIKE 'Only one upgrade option available%'
+                    AND ${has_amadeus_call}
+                    AND ${amadeus_error_code} is null
+                    AND ${amadeus_error_message} is null)
          THEN 1 ELSE 0
        END ;;
     group_label: "2. Amadeus Upsell"
