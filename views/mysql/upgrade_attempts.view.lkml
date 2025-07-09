@@ -12,6 +12,7 @@ view: upgrade_attempts {
       contestants_with_match_id AS (
         SELECT
           bca.*,
+          bcusta.affiliate_id,
           CASE
             WHEN bca.multiticket_part = 'master' THEN ub.min_id_for_master
             WHEN bca.multiticket_part = 'slave' THEN ub.max_id_for_slave
@@ -19,6 +20,7 @@ view: upgrade_attempts {
           END AS match_id
         FROM bookability_contestant_attempts bca
         JOIN upgrade_bounds ub ON bca.customer_attempt_id = ub.customer_attempt_id
+        JOIN bookability_customer_attempts bcusta on bcusta.id = bca.customer_attempt_id
         WHERE bca.date_created >= CURDATE() - INTERVAL 30 DAY
       )
       SELECT
@@ -36,6 +38,7 @@ view: upgrade_attempts {
           cwm.multiticket_part,
           cwm.exception,
           cwm.gds_error_message
+          cwm.affiliate_id
       FROM contestants_with_match_id cwm
       JOIN bookability_customer_attempt_upgrade_option bcauo
         ON bcauo.customer_attempt_id = cwm.customer_attempt_id
@@ -59,6 +62,11 @@ view: upgrade_attempts {
   dimension: package_hash {
     type: string
     sql: ${TABLE}.package_hash ;;
+  }
+
+  dimension: affiliate_id {
+    type: number
+    sql: ${TABLE}.affiliate_id ;;
   }
 
   dimension: booking_id {
