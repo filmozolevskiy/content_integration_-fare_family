@@ -8,7 +8,8 @@ view: upgraded_bookings {
         b.validating_carrier,
         b.multiticket_relationship_type,
         b.cancel_reason,
-        b.currency
+        b.currency,
+        bd.affiliate_id
       FROM
         bookings b
         JOIN booking_details bd ON b.id = bd.booking_id
@@ -41,6 +42,11 @@ view: upgraded_bookings {
   dimension: multiticket_relationship_type {
     type: string
     sql: ${TABLE}.multiticket_relationship_type ;;
+  }
+
+  dimension: affiliate_id {
+    type: number
+    sql: ${TABLE}.affiliate_id ;;
   }
 
   dimension: validating_carrier {
