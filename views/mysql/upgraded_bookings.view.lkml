@@ -14,7 +14,7 @@ view: upgraded_bookings {
         bookings b
         JOIN booking_details bd ON b.id = bd.booking_id
       WHERE
-        b.booking_date >= CURDATE() - INTERVAL 30 DAY
+        b.booking_date >= CURDATE() - INTERVAL 60 DAY
         AND EXISTS (SELECT 1 FROM booking_tasks WHERE booking_id = b.id AND type = 1)
         AND b.is_test = 0
         AND (b.is_multiticket = 0 OR b.multiticket_relationship_type = 'master')
