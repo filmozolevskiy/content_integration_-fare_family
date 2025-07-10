@@ -37,7 +37,7 @@ view: upgrade_attempts {
           cwm.marketing_carriers,
           cwm.multiticket_part,
           cwm.exception,
-          cwm.gds_error_message
+          cwm.gds_error_message,
           cwm.affiliate_id
       FROM contestants_with_match_id cwm
       JOIN bookability_customer_attempt_upgrade_option bcauo
