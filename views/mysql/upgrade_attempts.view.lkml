@@ -188,7 +188,7 @@ view: upgrade_attempts {
 
   measure: booking_revenue_sum {
     type: sum
-    sql: ${TABLE}.revenue ;;
+    sql: ${revenue} ;;
     value_format_name: decimal_0
     label: "Booking Revenue"
   }
