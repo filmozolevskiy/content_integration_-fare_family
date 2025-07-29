@@ -9,12 +9,17 @@ view: upgraded_bookings {
         b.multiticket_relationship_type,
         b.cancel_reason,
         b.currency,
-        bd.affiliate_id
+        bd.affiliate_id,
+        (
+          select bca.original_revenue
+          from bookability_contestant_attempts bca
+          where bca.booking_id = b.id and bca.office_id = b.gds_account_id
+        ) as revenue
       FROM
         bookings b
         JOIN booking_details bd ON b.id = bd.booking_id
       WHERE
-        b.booking_date >= CURDATE() - INTERVAL 60 DAY
+        b.booking_date >= CURDATE() - INTERVAL 2 DAY
         AND EXISTS (SELECT 1 FROM booking_tasks WHERE booking_id = b.id AND type = 1)
         AND b.is_test = 0
         AND (b.is_multiticket = 0 OR b.multiticket_relationship_type = 'master')
@@ -57,6 +62,13 @@ view: upgraded_bookings {
   dimension: currency {
     type: string
     sql: ${TABLE}.currency ;;
+  }
+
+  dimension: revenue {
+    type: number
+    sql: ${TABLE}.revenue ;;
+    value_format_name: decimal_2
+    label: "Revenue"
   }
 
   dimension: cancel_reason {
@@ -107,6 +119,13 @@ view: upgraded_bookings {
       is_upgraded_package: "yes"
       ]
     value_format_name: decimal_0
+  }
+
+  measure: total_revenue {
+    type: sum
+    sql: ${revenue} ;;
+    value_format_name: decimal_2
+    label: "Total Revenue"
   }
 
 }
