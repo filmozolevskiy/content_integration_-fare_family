@@ -28,6 +28,7 @@ view: upgrade_attempts {
           cwm.search_hash,
           cwm.package_hash,
           cwm.booking_id,
+          cwm.original_revenue,
           cwm.status AS status,
           cwm.gds,
           cwm.office_id,
@@ -72,6 +73,11 @@ view: upgrade_attempts {
   dimension: booking_id {
     type: string
     sql: ${TABLE}.booking_id ;;
+  }
+
+  dimension: revenue {
+    type: number
+    sql: ${TABLE}.original_revenue ;;
   }
 
   dimension: status {
