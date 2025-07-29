@@ -138,6 +138,10 @@ view: upgrade_attempts {
     sql: ${TABLE}.gds_error_message ;;
   }
 
+
+#### MEASURES ####
+
+
   measure: successful_attempts {
     type: sum
     sql: CASE WHEN ${status} = 1 THEN 1 ELSE 0 END ;;
@@ -182,5 +186,11 @@ view: upgrade_attempts {
     label: "Multiticket Count"
   }
 
+  measure: booking_revenue_sum {
+    type: sum
+    sql: ${TABLE}.revenue ;;
+    value_format_name: decimal_0
+    label: "Booking Revenue"
+  }
 
 }
