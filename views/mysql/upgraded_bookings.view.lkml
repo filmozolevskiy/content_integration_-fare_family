@@ -5,14 +5,21 @@ view: upgraded_bookings {
         b.booking_date,
         b.id,
         bd.is_upgraded_package,
+        b.validating_carrier,
         b.multiticket_relationship_type,
         b.cancel_reason,
-        b.currency
+        b.currency,
+        bd.affiliate_id,
+        (
+          select bca.original_revenue
+          from bookability_contestant_attempts bca
+          where bca.booking_id = b.id and bca.office_id = b.gds_account_id
+        ) as revenue
       FROM
         bookings b
         JOIN booking_details bd ON b.id = bd.booking_id
       WHERE
-        b.booking_date >= CURDATE() - INTERVAL 30 DAY
+        b.booking_date >= CURDATE() - INTERVAL 60 DAY
         AND EXISTS (SELECT 1 FROM booking_tasks WHERE booking_id = b.id AND type = 1)
         AND b.is_test = 0
         AND (b.is_multiticket = 0 OR b.multiticket_relationship_type = 'master')
@@ -42,9 +49,26 @@ view: upgraded_bookings {
     sql: ${TABLE}.multiticket_relationship_type ;;
   }
 
+  dimension: affiliate_id {
+    type: number
+    sql: ${TABLE}.affiliate_id ;;
+  }
+
+  dimension: validating_carrier {
+    type: string
+    sql: ${TABLE}.validating_carrier ;;
+  }
+
   dimension: currency {
     type: string
     sql: ${TABLE}.currency ;;
+  }
+
+  dimension: revenue {
+    type: number
+    sql: ${TABLE}.revenue ;;
+    value_format_name: decimal_2
+    label: "Revenue"
   }
 
   dimension: cancel_reason {
@@ -62,6 +86,15 @@ view: upgraded_bookings {
     filters:[
       is_upgraded_package: "yes"
       ]
+  }
+
+  measure: nk_bundles_count {
+    type: count
+    filters: [
+      is_upgraded_package: "yes",
+      validating_carrier: "NK"
+    ]
+    value_format_name: decimal_0
   }
 
   measure: upgraded_bookings_percentage {
@@ -86,6 +119,13 @@ view: upgraded_bookings {
       is_upgraded_package: "yes"
       ]
     value_format_name: decimal_0
+  }
+
+  measure: total_revenue {
+    type: sum
+    sql: ${revenue} ;;
+    value_format_name: decimal_2
+    label: "Total Revenue"
   }
 
 }
