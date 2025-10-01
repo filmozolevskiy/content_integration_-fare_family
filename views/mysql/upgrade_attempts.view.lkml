@@ -8,8 +8,9 @@ view: upgrade_attempts {
           MAX(id) AS max_id_for_slave
         FROM bookability_customer_attempt_upgrade_option
         GROUP BY customer_attempt_id
-      ),
-      contestants_with_match_id AS (
+        ),
+
+        contestants_with_match_id AS (
         SELECT
           bca.*,
           bcusta.affiliate_id,
@@ -21,9 +22,16 @@ view: upgrade_attempts {
         FROM bookability_contestant_attempts bca
         JOIN upgrade_bounds ub ON bca.customer_attempt_id = ub.customer_attempt_id
         JOIN bookability_customer_attempts bcusta on bcusta.id = bca.customer_attempt_id
-        WHERE bca.date_created >= CURDATE() - INTERVAL 60 DAY
-      )
-      SELECT
+        WHERE bca.date_created >= CURDATE() - INTERVAL 1 DAY
+        ),
+        exchange_rate AS (
+        select
+          id AS booking_id,
+          currency,
+          exchange_rate
+        from bookings
+        )
+        SELECT
           cwm.date_created AS date_created,
           cwm.search_hash,
           cwm.package_hash,
@@ -33,6 +41,7 @@ view: upgrade_attempts {
           cwm.gds,
           cwm.office_id,
           cwm.currency,
+          er.exchange_rate,
           cwm.fare_type,
           cwm.validating_carrier,
           cwm.marketing_carriers,
@@ -40,13 +49,15 @@ view: upgrade_attempts {
           cwm.exception,
           cwm.gds_error_message,
           cwm.affiliate_id
-      FROM contestants_with_match_id cwm
-      JOIN bookability_customer_attempt_upgrade_option bcauo
+        FROM contestants_with_match_id cwm
+        JOIN bookability_customer_attempt_upgrade_option bcauo
         ON bcauo.customer_attempt_id = cwm.customer_attempt_id
         AND bcauo.id = cwm.match_id
-      JOIN bookability_customer_attempts bcusta
-        ON bcusta.id = cwm.customer_attempt_id;;
-      # WHERE bcusta.source NOT LIKE '%staging%';;
+        JOIN bookability_customer_attempts bcusta
+        ON bcusta.id = cwm.customer_attempt_id
+        JOIN exchange_rate er
+        ON er.booking_id = cwm.booking_id
+        ;;
   }
 
   dimension_group: date_created {
@@ -78,6 +89,23 @@ view: upgrade_attempts {
   dimension: revenue {
     type: number
     sql: ${TABLE}.original_revenue ;;
+  }
+
+  dimension: exchange_rate {
+    type: number
+    sql: ${TABLE}.exchange_rate ;;
+  }
+
+  dimension: revenue_cad {
+    type: number
+    label: "Revenue (CAD, row)"
+    sql:
+    CASE
+      WHEN ${exchange_rate} IS NOT NULL THEN ${revenue} * ${exchange_rate}
+      WHEN ${currency} = 'CAD' THEN ${revenue}
+      ELSE NULL
+    END ;;
+    value_format: "$#,##0.00"
   }
 
   dimension: status {
@@ -191,6 +219,18 @@ view: upgrade_attempts {
     sql: ${revenue} ;;
     value_format_name: decimal_0
     label: "Booking Revenue"
+  }
+
+  measure: booking_revenue_sum_cad {
+    type: sum
+    sql:
+    CASE
+      WHEN ${exchange_rate} IS NOT NULL THEN ${revenue} * ${exchange_rate}
+      WHEN ${currency} = 'CAD' THEN ${revenue}
+      ELSE NULL
+    END ;;
+    label: "Booking Revenue (CAD)"
+    value_format: "$#,##0"
   }
 
 }
