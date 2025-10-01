@@ -22,7 +22,7 @@ view: upgrade_attempts {
         FROM bookability_contestant_attempts bca
         JOIN upgrade_bounds ub ON bca.customer_attempt_id = ub.customer_attempt_id
         JOIN bookability_customer_attempts bcusta on bcusta.id = bca.customer_attempt_id
-        WHERE bca.date_created >= CURDATE() - INTERVAL 1 DAY
+        WHERE bca.date_created >= CURDATE() - INTERVAL 60 DAY
         ),
         exchange_rate AS (
         select
