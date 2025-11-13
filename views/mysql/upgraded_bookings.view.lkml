@@ -128,4 +128,13 @@ view: upgraded_bookings {
     label: "Total Revenue"
   }
 
+  measure: f9_bundles_count {
+    type: count
+    filters: [
+      is_upgraded_package: "yes",
+      validating_carrier: "F9"
+    ]
+    value_format_name: decimal_0
+  }
+
 }
