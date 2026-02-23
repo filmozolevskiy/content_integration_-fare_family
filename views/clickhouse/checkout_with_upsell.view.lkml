@@ -910,23 +910,16 @@ view: checkout_with_upsell {
 
   dimension: is_eligible_for_upgrade {
     type: yesno
-    sql: CASE
-          WHEN ${TABLE}.is_eligible_for_upgrade = 'false' THEN FALSE
-          WHEN not ${TABLE}.is_eligible_for_upgrade = 'true' THEN TRUE
-          ELSE NULL
-         END ;;
+    sql: ${TABLE}.is_eligible_for_upgrade ;;
     group_label: "4. Final Step Upsell"
     hidden: yes
   }
 
   dimension: is_multiticket {
     type: yesno
-    sql: CASE
-          WHEN ${TABLE}.is_multiticket = 'false' THEN FALSE
-          WHEN not ${TABLE}.is_multiticket = 'true' THEN TRUE
-          ELSE NULL
-         END ;;
+    sql: ${TABLE}${TABLE}.is_multiticket ;;
     group_label: "4. Final Step Upsell"
+    hidden: yes
   }
 
   dimension: final_step_offers_returned {
