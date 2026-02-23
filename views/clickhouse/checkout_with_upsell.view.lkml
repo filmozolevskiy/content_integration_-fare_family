@@ -114,7 +114,7 @@ view: checkout_with_upsell {
       NULLIF(final_step.search_id, '') AS final_step_search_id,
       NULLIF(final_step.package_id, '') AS final_step_package_id,
       final_step.is_eligible_for_upgrade AS is_eligible_for_upgrade,
-      filan_step.is_multiticket as is_multiticket,
+      final_step.is_multiticket as is_multiticket,
       final_step.offers_returned AS final_step_offers_returned,
       final_step.offers_shown AS final_step_offers_shown
 
