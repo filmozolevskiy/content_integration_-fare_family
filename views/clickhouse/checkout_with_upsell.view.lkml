@@ -63,6 +63,7 @@ view: checkout_with_upsell {
       search_id,
       package_id,
       is_eligible_for_upgrade,
+      is_multiticket,
       offers_returned,
       offers_shown,
       ROW_NUMBER() OVER (
@@ -113,6 +114,7 @@ view: checkout_with_upsell {
       NULLIF(final_step.search_id, '') AS final_step_search_id,
       NULLIF(final_step.package_id, '') AS final_step_package_id,
       final_step.is_eligible_for_upgrade AS is_eligible_for_upgrade,
+      filan_step.is_multiticket as is_multiticket,
       final_step.offers_returned AS final_step_offers_returned,
       final_step.offers_shown AS final_step_offers_shown
 
@@ -910,11 +912,21 @@ view: checkout_with_upsell {
     type: yesno
     sql: CASE
           WHEN ${TABLE}.is_eligible_for_upgrade = 'false' THEN FALSE
-          WHEN not ${TABLE}.is_eligible_for_upgrade = 'false' THEN TRUE
+          WHEN not ${TABLE}.is_eligible_for_upgrade = 'true' THEN TRUE
           ELSE NULL
          END ;;
     group_label: "4. Final Step Upsell"
     hidden: yes
+  }
+
+  dimension: is_multiticket {
+    type: yesno
+    sql: CASE
+          WHEN ${TABLE}.is_multiticket = 'false' THEN FALSE
+          WHEN not ${TABLE}.is_multiticket = 'true' THEN TRUE
+          ELSE NULL
+         END ;;
+    group_label: "4. Final Step Upsell"
   }
 
   dimension: final_step_offers_returned {
