@@ -137,4 +137,13 @@ view: upgraded_bookings {
     value_format_name: decimal_0
   }
 
+  measure: pd_bundles_count {
+    type: count
+    filters: [
+      is_upgraded_package: "yes",
+      validating_carrier: "PD"
+    ]
+    value_format_name: decimal_0
+  }
+
 }
