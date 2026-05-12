@@ -10,18 +10,18 @@ view: upgraded_bookings {
         b.cancel_reason,
         b.currency,
         bd.affiliate_id,
-        (
-          select bca.original_revenue
-          from bookability_contestant_attempts bca
-          where bca.booking_id = b.id and bca.office_id = b.gds_account_id
-        ) as revenue
+        bca.original_revenue as revenue
       FROM
         bookings b
         JOIN booking_details bd ON b.id = bd.booking_id
+        JOIN bookability_contestant_attempts bca
+          ON bca.booking_id = b.id
+          AND bca.office_id = b.gds_account_id
       WHERE
         b.booking_date >= CURDATE() - INTERVAL 60 DAY
         AND EXISTS (SELECT 1 FROM booking_tasks WHERE booking_id = b.id AND type = 1)
         AND b.is_test = 0
+        AND bca.source not like '%staging%'
         AND (b.is_multiticket = 0 OR b.multiticket_relationship_type = 'master')
         AND (b.cancel_reason IS NULL OR b.cancel_reason IN ('customer_request', 'aborted', 'cc_decline', 'fraud'))
       ;;
