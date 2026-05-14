@@ -31,37 +31,66 @@ view: upgraded_bookings {
     type: time
     timeframes: [raw, hour, date, week, month, year]
     sql: ${TABLE}.booking_date ;;
+    group_label: "1. Date"
+    label: "Booking Date"
+    description: "Date the booking was created."
   }
 
   dimension: booking_id {
     type: number
     primary_key: yes
     sql: ${TABLE}.id ;;
+    group_label: "2. Booking"
+    label: "Booking ID"
+    description: "Unique booking identifier (bookings.id)."
   }
 
   dimension: is_upgraded_package {
     type: yesno
     sql: ${TABLE}.is_upgraded_package ;;
+    group_label: "2. Booking"
+    label: "Is Upgraded Package"
+    description: "True when the booking used an upgraded (fare family) package."
   }
 
-  dimension: multiticket_relationship_type {
+  dimension: cancel_reason {
     type: string
-    sql: ${TABLE}.multiticket_relationship_type ;;
+    sql: ${TABLE}.cancel_reason ;;
+    group_label: "2. Booking"
+    label: "Cancel Reason"
+    description: "Reason the booking was cancelled; NULL for active bookings."
   }
 
   dimension: affiliate_id {
     type: number
     sql: ${TABLE}.affiliate_id ;;
+    group_label: "2. Booking"
+    label: "Affiliate ID"
+    description: "Affiliate identifier from booking_details."
   }
 
   dimension: validating_carrier {
     type: string
     sql: ${TABLE}.validating_carrier ;;
+    group_label: "3. Flight"
+    label: "Validating Carrier"
+    description: "IATA code of the validating carrier."
+  }
+
+  dimension: multiticket_relationship_type {
+    type: string
+    sql: ${TABLE}.multiticket_relationship_type ;;
+    group_label: "3. Flight"
+    label: "Multiticket Relationship Type"
+    description: "Multiticket role: 'master', 'slave', or NULL for single-ticket bookings."
   }
 
   dimension: currency {
     type: string
     sql: ${TABLE}.currency ;;
+    group_label: "4. Revenue"
+    label: "Currency"
+    description: "Booking currency code."
   }
 
   dimension: revenue {
@@ -69,23 +98,26 @@ view: upgraded_bookings {
     sql: ${TABLE}.revenue ;;
     value_format_name: decimal_2
     label: "Revenue"
-  }
-
-  dimension: cancel_reason {
-    type: string
-    sql: ${TABLE}.cancel_reason ;;
+    group_label: "4. Revenue"
+    description: "Original revenue from the winning contestant attempt."
   }
 
   measure: total_bookings {
     type: count
     value_format_name: decimal_0
+    label: "Total Bookings"
+    group_label: "2. Booking"
+    description: "Total number of bookings in the 60-day window."
   }
 
   measure: upgraded_bookings_count {
     type: count
-    filters:[
+    filters: [
       is_upgraded_package: "yes"
-      ]
+    ]
+    label: "Upgraded Bookings"
+    group_label: "2. Booking"
+    description: "Number of bookings where an upgraded package was used."
   }
 
   measure: nk_bundles_count {
@@ -95,37 +127,9 @@ view: upgraded_bookings {
       validating_carrier: "NK"
     ]
     value_format_name: decimal_0
-  }
-
-  measure: upgraded_bookings_percentage {
-    type: number
-    sql: ${upgraded_bookings_count} / NULLIF(${total_bookings}, 0) ;;
-    value_format: "0.0%"
-  }
-
-  measure: multiticket_bookings_count {
-    type: count
-    filters: [
-      multiticket_relationship_type: "master",
-      is_upgraded_package: "yes"
-    ]
-    value_format_name: decimal_0
-  }
-
-  measure: regular_bookings_count {
-    type: count
-    filters: [
-      multiticket_relationship_type: "-master",
-      is_upgraded_package: "yes"
-      ]
-    value_format_name: decimal_0
-  }
-
-  measure: total_revenue {
-    type: sum
-    sql: ${revenue} ;;
-    value_format_name: decimal_2
-    label: "Total Revenue"
+    label: "NK Bundles"
+    group_label: "2. Booking"
+    description: "Count of upgraded bookings on Spirit Airlines (NK)."
   }
 
   measure: f9_bundles_count {
@@ -135,6 +139,9 @@ view: upgraded_bookings {
       validating_carrier: "F9"
     ]
     value_format_name: decimal_0
+    label: "F9 Bundles"
+    group_label: "2. Booking"
+    description: "Count of upgraded bookings on Frontier Airlines (F9)."
   }
 
   measure: pd_bundles_count {
@@ -144,6 +151,51 @@ view: upgraded_bookings {
       validating_carrier: "PD"
     ]
     value_format_name: decimal_0
+    label: "PD Bundles"
+    group_label: "2. Booking"
+    description: "Count of upgraded bookings on Porter Airlines (PD)."
+  }
+
+  measure: upgraded_bookings_percentage {
+    type: number
+    sql: ${upgraded_bookings_count} / NULLIF(${total_bookings}, 0) ;;
+    value_format: "0.0%"
+    label: "Upgraded Bookings %"
+    group_label: "2. Booking"
+    description: "Proportion of total bookings that used an upgraded package."
+  }
+
+  measure: multiticket_bookings_count {
+    type: count
+    filters: [
+      multiticket_relationship_type: "master",
+      is_upgraded_package: "yes"
+    ]
+    value_format_name: decimal_0
+    label: "Multiticket Upgraded Bookings"
+    group_label: "3. Flight"
+    description: "Count of upgraded bookings that are master legs of multiticket itineraries."
+  }
+
+  measure: regular_bookings_count {
+    type: count
+    filters: [
+      multiticket_relationship_type: "-master",
+      is_upgraded_package: "yes"
+    ]
+    value_format_name: decimal_0
+    label: "Single-Ticket Upgraded Bookings"
+    group_label: "3. Flight"
+    description: "Count of upgraded bookings that are single-ticket (non-master multiticket)."
+  }
+
+  measure: total_revenue {
+    type: sum
+    sql: ${revenue} ;;
+    value_format_name: decimal_2
+    label: "Total Revenue"
+    group_label: "4. Revenue"
+    description: "Sum of revenue across all bookings in the window."
   }
 
 }
