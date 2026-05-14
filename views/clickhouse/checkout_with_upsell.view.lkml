@@ -255,6 +255,12 @@ view: checkout_with_upsell {
     group_label: "1. Checkout"
     value_format_name: decimal_0
   }
+  measure: checkouts_safe_denom {
+    type: number
+    hidden: yes
+    sql: NULLIF(${number_of_checkouts}, 0) ;;
+  }
+
 
 
   # --- Amadeus Upsell ---
@@ -453,12 +459,7 @@ view: checkout_with_upsell {
 
   measure: amadeus_return_proportion_pct {
     type: number
-    sql:
-      CASE
-        WHEN ${number_of_checkouts} = 0
-        THEN NULL
-        ELSE ${amadeus_return_proportion} * 1.0 / ${number_of_checkouts}
-      END ;;
+    sql: ${amadeus_return_proportion} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
     description: "Proportion of times we received options from Amadeus."
@@ -499,12 +500,7 @@ view: checkout_with_upsell {
 
   measure: amadeus_calls_coverage_pct {
     type: number
-    sql:
-      CASE
-        WHEN ${number_of_checkouts} = 0
-        THEN NULL
-        ELSE ${amadeus_calls_coverage} * 1.0 / ${number_of_checkouts}
-      END ;;
+    sql: ${amadeus_calls_coverage} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
     description: "Proportion of times we called Amadeus."
@@ -512,11 +508,7 @@ view: checkout_with_upsell {
 
   measure: repetitive_checkouts_pct {
     type: number
-    sql:
-      CASE
-        WHEN ${number_of_checkouts} = 0 THEN NULL
-        ELSE ${repetitive_checkouts} * 1.0 / ${number_of_checkouts}
-      END ;;
+    sql: ${repetitive_checkouts} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
     description: "Proportion of times we didn't call Amadeus for repetitive checkouts."
@@ -524,12 +516,7 @@ view: checkout_with_upsell {
 
   measure: upgraded_checkouts_pct {
     type: number
-    sql:
-      CASE
-        WHEN ${number_of_checkouts} = 0
-        THEN NULL
-        ELSE ${upgraded_checkouts} * 1.0 / ${number_of_checkouts}
-      END ;;
+    sql: ${upgraded_checkouts} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
     description: "Proportion of times we didn't call Amadeus for upgraded checkouts."
@@ -537,12 +524,7 @@ view: checkout_with_upsell {
 
   measure: filtered_internally_other_pct {
     type: number
-    sql:
-      CASE
-        WHEN ${number_of_checkouts} = 0
-        THEN NULL
-        ELSE ${filtered_internally_other} * 1.0 / ${number_of_checkouts}
-      END ;;
+    sql: ${filtered_internally_other} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
     description: "Proportion of times we didn't call Amadeus for other reasons."
@@ -550,10 +532,7 @@ view: checkout_with_upsell {
 
   measure: amadeus_filtered_internally_pct {
     type: number
-    sql: CASE
-         WHEN ${number_of_checkouts} = 0 THEN NULL
-         ELSE ${amadeus_filtered_internally} * 1.0 / ${number_of_checkouts}
-       END ;;
+    sql: ${amadeus_filtered_internally} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
     description: "Proportion of times the Amadeus call was filtered internally and not made."
@@ -561,11 +540,7 @@ view: checkout_with_upsell {
 
   measure: amadeus_error_codes_pct {
     type: number
-    sql:
-      CASE
-        WHEN ${number_of_checkouts} = 0 THEN NULL
-        ELSE ${amadeus_errors_codes} * 1.0 / ${number_of_checkouts}
-      END ;;
+    sql: ${amadeus_errors_codes} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
     description: "Proportion of Amadeus erros."
@@ -573,11 +548,7 @@ view: checkout_with_upsell {
 
   measure: amadeus_error_messages_pct {
     type: number
-    sql:
-      CASE
-        WHEN ${number_of_checkouts} = 0 THEN NULL
-        ELSE ${amadeus_error_messages} * 1.0 / ${number_of_checkouts}
-      END ;;
+    sql: ${amadeus_error_messages} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "2. Amadeus Upsell"
     value_format_name: percent_2
     description: "Proportion of Amadeus error messages. Including internal and external."
@@ -692,10 +663,7 @@ view: checkout_with_upsell {
 
   measure: routehapp_no_options_loaded_pct {
     type: number
-    sql: CASE
-         WHEN ${number_of_checkouts} = 0 THEN NULL
-         ELSE ${routehapp_no_options_loaded_count} * 1.0 / ${number_of_checkouts}
-       END ;;
+    sql: ${routehapp_no_options_loaded_count} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
     description: "Percentage of cases when RH options were received but could not be extracted."
@@ -759,7 +727,7 @@ view: checkout_with_upsell {
 
   measure: RH_error_empty_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${RH_error_empty_count} * 1.0 / ${number_of_checkouts} END ;;
+    sql: ${RH_error_empty_count} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
     description: "Proortion of cases when RH returned error with NO options."
@@ -767,7 +735,7 @@ view: checkout_with_upsell {
 
   measure: RH_error_not_empty_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${RH_error_not_empty_count} * 1.0 / ${number_of_checkouts} END ;;
+    sql: ${RH_error_not_empty_count} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
     description: "Proportion of cases when RH returned error with options."
@@ -807,11 +775,7 @@ view: checkout_with_upsell {
 
   measure: routehappy_errors_pct {
     type: number
-    sql:
-      CASE
-        WHEN ${number_of_checkouts} = 0 THEN NULL
-        ELSE ${routehappy_errors_count} * 1.0 / ${number_of_checkouts}
-      END ;;
+    sql: ${routehappy_errors_count} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
     description: "Proportion of RH errors. Can be used for both internal and external."
@@ -827,11 +791,7 @@ view: checkout_with_upsell {
 
   measure: routehappy_internal_error_pct {
     type: number
-    sql:
-      CASE
-        WHEN ${number_of_checkouts} = 0 THEN NULL
-        ELSE ${routehappy_internal_error_count} * 1.0 / ${number_of_checkouts}
-      END ;;
+    sql: ${routehappy_internal_error_count} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
     description: "Proportion of cases when we had options from Amadeus but didn't call RH."
@@ -839,11 +799,7 @@ view: checkout_with_upsell {
 
   measure: routehappy_calls_pct {
     type: number
-    sql:
-      CASE
-        WHEN ${number_of_checkouts} = 0 THEN NULL
-        ELSE ${routehappy_calls_count} * 1.0 / ${number_of_checkouts}
-      END ;;
+    sql: ${routehappy_calls_count} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
     description: "Proportion of RH calls to checkouts."
@@ -851,11 +807,7 @@ view: checkout_with_upsell {
 
   measure: routehappy_sent_pct {
     type: number
-    sql:
-      CASE
-        WHEN ${number_of_checkouts} = 0 THEN NULL
-        ELSE ${routehappy_sent_count} * 1.0 / ${number_of_checkouts}
-      END ;;
+    sql: ${routehappy_sent_count} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "3. Routehappy"
     value_format_name: percent_2
     description: "Proportion of cases when we send options to RH."
@@ -905,7 +857,7 @@ view: checkout_with_upsell {
 
   measure: final_step_offers_returned_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${final_step_offers_returned_count} * 1.0 / ${number_of_checkouts} END ;;
+    sql: ${final_step_offers_returned_count} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "4. Final Step Upsell"
     value_format_name: percent_2
   }
@@ -946,7 +898,7 @@ view: checkout_with_upsell {
 
   measure: final_step_offers_shown_pct {
     type: number
-    sql: CASE WHEN ${number_of_checkouts} = 0 THEN NULL ELSE ${final_step_offers_shown_count} * 1.0 / ${number_of_checkouts} END ;;
+    sql: ${final_step_offers_shown_count} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "4. Final Step Upsell"
     value_format_name: percent_2
   }
@@ -974,10 +926,7 @@ view: checkout_with_upsell {
 
   measure: final_step_offers_returned_no_dupl_pct {
     type: number
-    sql: CASE
-        WHEN ${number_of_checkouts} = 0 THEN NULL
-        ELSE ${final_step_offers_returned_no_dupl_count} * 1.0 / ${number_of_checkouts}
-      END ;;
+    sql: ${final_step_offers_returned_no_dupl_count} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "4. Final Step Upsell"
     value_format_name: percent_2
     description: "Percentage of RH offers returned, excluding those filtered internally."
@@ -1004,10 +953,7 @@ view: checkout_with_upsell {
 
   measure: final_step_offers_shown_excluding_internal_filtering_pct {
     type: number
-    sql: CASE
-        WHEN ${number_of_checkouts} = 0 THEN NULL
-        ELSE ${final_step_offers_shown_excluding_internal_filtering_count} * 1.0 / ${number_of_checkouts}
-      END ;;
+    sql: ${final_step_offers_shown_excluding_internal_filtering_count} * 1.0 / ${checkouts_safe_denom} ;;
     group_label: "4. Final Step Upsell"
     value_format_name: percent_2
     description: "Percentage of RH offers returned, excluding those filtered internally."
