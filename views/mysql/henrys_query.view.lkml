@@ -16,6 +16,9 @@ view: henrys_query {
     type: time
     timeframes: [raw, date, week, month]
     sql: ${TABLE}.dd ;;
+    group_label: "1. Date"
+    label: "Request Date"
+    description: "Date of the fare family options request."
   }
 
   measure: checkouts {
@@ -23,6 +26,8 @@ view: henrys_query {
     sql: ${TABLE}.checkouts ;;
     value_format_name: decimal_0
     label: "Total Requests"
+    group_label: "2. Metrics"
+    description: "Total number of fare_family_options_requests for the day."
   }
 
   measure: ff {
@@ -30,6 +35,8 @@ view: henrys_query {
     sql: ${TABLE}.ff ;;
     value_format_name: decimal_0
     label: "Non-empty Fare Family Options"
+    group_label: "2. Metrics"
+    description: "Requests where the fare_family_options_short response was non-empty."
   }
 
   measure: proportion {
@@ -37,5 +44,7 @@ view: henrys_query {
     sql: ${TABLE}.proportion ;;
     value_format_name: percent_2
     label: "Proportion with Fare Family Options"
+    group_label: "2. Metrics"
+    description: "Share of requests that returned at least one fare family option."
   }
 }
