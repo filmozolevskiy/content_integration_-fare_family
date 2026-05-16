@@ -24,6 +24,12 @@ view: checkout_with_upsell {
             trip_type,
             ROW_NUMBER() OVER (PARTITION BY search_id,package_id ORDER BY begin_checkout_timestamp DESC) AS rn
           FROM gtm_views.begin_checkout
+          WHERE {% condition checkout_begin_checkout_timestamp_date %} begin_checkout_timestamp {% endcondition %}
+            AND {% condition currency %}     currency     {% endcondition %}
+            AND {% condition affiliate_id %} affiliate_id {% endcondition %}
+            AND {% condition site_name %}    site_name    {% endcondition %}
+            AND {% condition flight_class %} flight_class {% endcondition %}
+            AND {% condition trip_type %}    trip_type    {% endcondition %}
         ),
 
       amadeus_upsell AS (
@@ -41,6 +47,7 @@ view: checkout_with_upsell {
       gds_office_id,
       ROW_NUMBER() OVER (PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
       FROM jupiter.jupiter_fare_priceupsellwithoutpnr
+      WHERE {% condition checkout_begin_checkout_timestamp_date %} created_at {% endcondition %}
       ),
 
       routehappy AS (
@@ -55,6 +62,7 @@ view: checkout_with_upsell {
       PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
       FROM jupiter.jupiter_consolidated
       WHERE (scope = 'Upsells' or scope = '')
+        AND {% condition checkout_begin_checkout_timestamp_date %} created_at {% endcondition %}
       ),
 
       final_step AS (
@@ -69,6 +77,7 @@ view: checkout_with_upsell {
       ROW_NUMBER() OVER (
       PARTITION BY search_id, package_id ORDER BY created_at DESC) AS rn
       FROM jupiter.jupiter_upsell_proposals
+      WHERE {% condition checkout_begin_checkout_timestamp_date %} created_at {% endcondition %}
       )
 
       SELECT
@@ -133,7 +142,6 @@ view: checkout_with_upsell {
       AND (amadeus_upsell.rn = 1 OR amadeus_upsell.rn = 0)
       AND (routehappy.rn = 1 OR routehappy.rn = 0)
       AND (final_step.rn = 1 OR final_step.rn = 0)
-      AND total_checkouts.begin_checkout_timestamp >= subtractDays(today(), 60)
       ;;
   }
 
