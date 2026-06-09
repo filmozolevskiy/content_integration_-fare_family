@@ -37,6 +37,7 @@ view: checkout_with_upsell {
       created_at,
       search_id,
       package_id,
+      device_type,
       error_code,
       error_message,
       offers_returned,
@@ -109,6 +110,7 @@ view: checkout_with_upsell {
       amadeus_upsell.validating_carriers AS amadeus_validating_carriers,
       amadeus_upsell.marketing_carriers AS amadeus_marketing_carriers,
       amadeus_upsell.operating_carriers AS amadeus_operating_carriers,
+      amadeus_upsell.device_type AS device_type,
       amadeus_upsell.gds AS original_gds,
       amadeus_upsell.gds_office_id AS original_gds_office_id,
 
@@ -372,6 +374,13 @@ view: checkout_with_upsell {
     type: string
     sql: ${TABLE}.amadeus_operating_carriers ;;
     group_label: "2. Amadeus Upsell"
+  }
+
+  dimension: device_type {
+    type: string
+    sql: ${TABLE}.device_type ;;
+    group_label: "2. Amadeus Upsell"
+    description: "Device type associated with the Amadeus upsell call."
   }
 
   dimension: original_gds {
