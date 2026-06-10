@@ -9,6 +9,7 @@ view: upgraded_bookings {
         b.multiticket_relationship_type,
         b.cancel_reason,
         b.currency,
+        b.exchange_rate,
         bd.affiliate_id,
         bca.original_revenue as revenue
       FROM
@@ -24,7 +25,7 @@ view: upgraded_bookings {
         AND bca.source not like '%staging%'
         AND (b.is_multiticket = 0 OR b.multiticket_relationship_type = 'master')
         AND (b.cancel_reason IS NULL OR b.cancel_reason IN ('customer_request', 'aborted', 'cc_decline', 'fraud'))
-      ;;
+    ;;
   }
 
   dimension_group: booking_date {
@@ -93,6 +94,15 @@ view: upgraded_bookings {
     description: "Booking currency code."
   }
 
+  dimension: exchange_rate {
+    type: number
+    sql: ${TABLE}.exchange_rate ;;
+    group_label: "4. Revenue"
+    label: "Exchange Rate"
+    description: "Exchange rate from booking currency to CAD at time of booking."
+    hidden: yes
+  }
+
   dimension: revenue {
     type: number
     sql: ${TABLE}.revenue ;;
@@ -100,6 +110,20 @@ view: upgraded_bookings {
     label: "Revenue"
     group_label: "4. Revenue"
     description: "Original revenue from the winning contestant attempt."
+  }
+
+  dimension: revenue_cad {
+    type: number
+    sql:
+      CASE
+        WHEN ${exchange_rate} IS NOT NULL THEN ${revenue} * ${exchange_rate}
+        WHEN ${currency} = 'CAD'           THEN ${revenue}
+        ELSE NULL
+      END ;;
+    value_format: "$#,##0.00"
+    label: "Revenue (CAD, row)"
+    group_label: "4. Revenue"
+    description: "Per-booking revenue converted to CAD; NULL when rate and currency are unknown."
   }
 
   measure: total_bookings {
@@ -196,6 +220,39 @@ view: upgraded_bookings {
     label: "Total Revenue"
     group_label: "4. Revenue"
     description: "Sum of revenue across all bookings in the window."
+  }
+
+  measure: upgraded_revenue {
+    type: sum
+    sql: ${revenue} ;;
+    filters: [
+      is_upgraded_package: "yes"
+    ]
+    value_format_name: decimal_2
+    label: "Upgraded Revenue"
+    group_label: "4. Revenue"
+    description: "Sum of revenue from bookings that used an upgraded package, in booking currency."
+  }
+
+  measure: upgraded_revenue_cad {
+    type: sum
+    sql: ${revenue_cad} ;;
+    filters: [
+      is_upgraded_package: "yes"
+    ]
+    value_format: "$#,##0"
+    label: "Upgraded Revenue (CAD)"
+    group_label: "4. Revenue"
+    description: "Sum of revenue from bookings that used an upgraded package, converted to CAD."
+  }
+
+  measure: upgrade_revenue_per_booking_cad {
+    type: number
+    sql: ${upgraded_revenue_cad} / NULLIF(${total_bookings}, 0) ;;
+    value_format: "$#,##0.00"
+    label: "Upgrade Revenue per Booking (CAD)"
+    group_label: "4. Revenue"
+    description: "Upgraded revenue (CAD) divided by total bookings in the same slice — volume-normalised upgrade revenue."
   }
 
 }
