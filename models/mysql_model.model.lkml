@@ -22,6 +22,12 @@ datagroup: henrys_query_daily {
 explore: upgrade_attempts {
   label: "Upsell Attempts"
   persist_with: upgrade_attempts_daily
+
+  join: daily_bookings_total {
+    type: left_outer
+    relationship: many_to_one
+    sql_on: ${upgrade_attempts.date_created_date} = ${daily_bookings_total.booking_date} ;;
+  }
 }
 
 explore: upgraded_bookings {
