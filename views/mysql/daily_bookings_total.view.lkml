@@ -2,7 +2,7 @@ view: daily_bookings_total {
   derived_table: {
     sql:
       SELECT
-        b.booking_date,
+        DATE(b.booking_date) AS booking_date,
         COUNT(*) AS total_bookings
       FROM
         bookings b
@@ -17,7 +17,7 @@ view: daily_bookings_total {
         AND bca.source not like '%staging%'
         AND (b.is_multiticket = 0 OR b.multiticket_relationship_type = 'master')
         AND (b.cancel_reason IS NULL OR b.cancel_reason IN ('customer_request', 'aborted', 'cc_decline', 'fraud'))
-      GROUP BY b.booking_date
+      GROUP BY DATE(b.booking_date)
     ;;
   }
 
@@ -41,6 +41,6 @@ view: daily_bookings_total {
     value_format_name: decimal_0
     label: "Total Bookings (Daily)"
     group_label: "2. Booking"
-    description: "Total bookings on the attempt's day. Same filter set as upgraded_bookings.total_bookings (60-day window, non-test, non-staging, master / single-ticket, allowed cancel reasons). Uses sum_distinct on booking_date so the count is not inflated by fan-out from upgrade_attempts."
+    description: "Total bookings on the attempt's day. Same filter set as upgraded_bookings.total_bookings (60-day window, non-test, non-staging, master / single-ticket, allowed cancel reasons). One row per calendar day; uses sum_distinct on booking_date so the count is not inflated by fan-out from upgrade_attempts."
   }
 }
