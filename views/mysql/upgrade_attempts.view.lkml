@@ -8,56 +8,56 @@ view: upgrade_attempts {
           MAX(id) AS max_id_for_slave
         FROM bookability_customer_attempt_upgrade_option
         GROUP BY customer_attempt_id
-        ),
+      ),
 
-        contestants_with_match_id AS (
+      contestants_with_match_id AS (
         SELECT
           bca.*,
           bcusta.affiliate_id,
           CASE
             WHEN bca.multiticket_part = 'master' THEN ub.min_id_for_master
-            WHEN bca.multiticket_part = 'slave' THEN ub.max_id_for_slave
+            WHEN bca.multiticket_part = 'slave'  THEN ub.max_id_for_slave
             ELSE ub.min_id_for_master
           END AS match_id
         FROM bookability_contestant_attempts bca
         JOIN upgrade_bounds ub ON bca.customer_attempt_id = ub.customer_attempt_id
         JOIN bookability_customer_attempts bcusta on bcusta.id = bca.customer_attempt_id
         WHERE bca.date_created >= CURDATE() - INTERVAL 60 DAY
-        ),
-        exchange_rate AS (
+      ),
+      exchange_rate AS (
         select
           id AS booking_id,
           currency,
           exchange_rate
         from bookings
-        )
-        SELECT
-          cwm.date_created AS date_created,
-          cwm.search_hash,
-          cwm.package_hash,
-          cwm.booking_id,
-          cwm.original_revenue,
-          cwm.status AS status,
-          cwm.gds,
-          cwm.office_id,
-          cwm.currency,
-          er.exchange_rate,
-          cwm.fare_type,
-          cwm.validating_carrier,
-          cwm.marketing_carriers,
-          cwm.multiticket_part,
-          cwm.exception,
-          cwm.gds_error_message,
-          cwm.affiliate_id
-        FROM contestants_with_match_id cwm
-        JOIN bookability_customer_attempt_upgrade_option bcauo
+      )
+      SELECT
+        cwm.date_created AS date_created,
+        cwm.search_hash,
+        cwm.package_hash,
+        cwm.booking_id,
+        cwm.original_revenue,
+        cwm.status AS status,
+        cwm.gds,
+        cwm.office_id,
+        cwm.currency,
+        er.exchange_rate,
+        cwm.fare_type,
+        cwm.validating_carrier,
+        cwm.marketing_carriers,
+        cwm.multiticket_part,
+        cwm.exception,
+        cwm.gds_error_message,
+        cwm.affiliate_id
+      FROM contestants_with_match_id cwm
+      JOIN bookability_customer_attempt_upgrade_option bcauo
         ON bcauo.customer_attempt_id = cwm.customer_attempt_id
         AND bcauo.id = cwm.match_id
-        JOIN bookability_customer_attempts bcusta
+      JOIN bookability_customer_attempts bcusta
         ON bcusta.id = cwm.customer_attempt_id
-        JOIN exchange_rate er
+      JOIN exchange_rate er
         ON er.booking_id = cwm.booking_id
-        ;;
+    ;;
   }
 
   dimension_group: date_created {
@@ -184,9 +184,9 @@ view: upgrade_attempts {
   dimension: is_multiticket {
     type: yesno
     sql: CASE
-        WHEN ${TABLE}.multiticket_part = 'master' THEN true
-        ELSE false
-       END ;;
+           WHEN ${TABLE}.multiticket_part = 'master' THEN true
+           ELSE false
+         END ;;
     group_label: "5. Multiticket"
     label: "Is Multiticket"
     description: "True when this attempt is the master leg of a multiticket booking."
@@ -212,19 +212,17 @@ view: upgrade_attempts {
     type: number
     label: "Revenue (CAD, row)"
     sql:
-    CASE
-      WHEN ${exchange_rate} IS NOT NULL THEN ${revenue} * ${exchange_rate}
-      WHEN ${currency} = 'CAD' THEN ${revenue}
-      ELSE NULL
-    END ;;
+      CASE
+        WHEN ${exchange_rate} IS NOT NULL THEN ${revenue} * ${exchange_rate}
+        WHEN ${currency} = 'CAD' THEN ${revenue}
+        ELSE NULL
+      END ;;
     value_format: "$#,##0.00"
     group_label: "6. Revenue"
     description: "Revenue converted to CAD using the exchange rate; NULL if rate and currency are unknown."
   }
 
-
 #### MEASURES ####
-
 
   measure: successful_attempts {
     type: sum
@@ -273,9 +271,9 @@ view: upgrade_attempts {
   measure: multiticket_count {
     type: sum
     sql: CASE
-        WHEN ${is_multiticket} THEN 1
-        ELSE 0
-       END ;;
+           WHEN ${is_multiticket} THEN 1
+           ELSE 0
+         END ;;
     value_format_name: decimal_0
     label: "Multiticket Count"
     group_label: "5. Multiticket"
@@ -294,15 +292,24 @@ view: upgrade_attempts {
   measure: booking_revenue_sum_cad {
     type: sum
     sql:
-    CASE
-      WHEN ${exchange_rate} IS NOT NULL THEN ${revenue} * ${exchange_rate}
-      WHEN ${currency} = 'CAD' THEN ${revenue}
-      ELSE NULL
-    END ;;
+      CASE
+        WHEN ${exchange_rate} IS NOT NULL THEN ${revenue} * ${exchange_rate}
+        WHEN ${currency} = 'CAD' THEN ${revenue}
+        ELSE NULL
+      END ;;
     label: "Booking Revenue (CAD)"
     value_format: "$#,##0"
     group_label: "6. Revenue"
     description: "Total revenue from upgrade attempts converted to CAD."
+  }
+
+  measure: upgrade_revenue_per_booking_cad {
+    type: number
+    sql: ${booking_revenue_sum_cad} / NULLIF(${daily_bookings_total.total_bookings}, 0) ;;
+    value_format: "$#,##0.00"
+    label: "Upgrade Revenue per Booking (CAD)"
+    group_label: "6. Revenue"
+    description: "Booking Revenue (CAD) from successful upgrade attempts divided by total bookings on the attempt's day. Volume-normalised upgrade revenue."
   }
 
 }
