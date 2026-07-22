@@ -2,6 +2,7 @@ connection: "clickhouse-prod"
 
 # Only include views that use ClickHouse
 include: "/views/clickhouse/*.view.lkml"
+include: "/views/clickhouse/upsell_coverage_new.view.lkml"
 
 datagroup: checkout_with_upsell_daily {
   sql_trigger: SELECT toDate(now()) ;;
@@ -17,3 +18,7 @@ explore: checkout_with_upsell {
     unless:  [checkout_with_upsell.checkout_begin_checkout_timestamp_date]
   }
 }
+
+explore: upsell_coverage_new {
+  label: "Upsell Coverage New"
+  }
