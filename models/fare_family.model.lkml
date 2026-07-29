@@ -22,3 +22,19 @@ explore: checkout_with_upsell {
 explore: upsell_coverage_new {
   label: "Upsell Coverage New"
   }
+
+# --- New parallel setup for the new fare-family board (Trello #3121) ---
+# Independent of the two explores above; those stay until cut-over.
+datagroup: fare_family_events_daily {
+  sql_trigger: SELECT toDate(now()) ;;
+  max_cache_age: "24 hours"
+}
+
+explore: fare_family_events {
+  label: "Fare Family Events"
+  persist_with: fare_family_events_daily
+  conditionally_filter: {
+    filters: [fare_family_events.timestamp_date: "30 days"]
+    unless:  [fare_family_events.timestamp_date]
+  }
+}
