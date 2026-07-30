@@ -33,8 +33,18 @@ datagroup: fare_family_events_daily {
 explore: fare_family_events {
   label: "Fare Family Events"
   persist_with: fare_family_events_daily
+  # Lock the whole explore to the checkout funnel stage — applies to every
+  # dimension and measure, non-overridable.
+  sql_always_where: ${fare_family_events.context} = 'checkout' ;;
   conditionally_filter: {
     filters: [fare_family_events.timestamp_date: "30 days"]
     unless:  [fare_family_events.timestamp_date]
+  }
+  # Booking linkage: booking_id lives on post-booking events, so left-join the
+  # per-event_key booking lookup. Pruned on tiles that select no booking field.
+  join: fare_family_booking_lookup {
+    type: left_outer
+    relationship: many_to_one
+    sql_on: ${fare_family_events.event_key} = ${fare_family_booking_lookup.event_key} ;;
   }
 }
