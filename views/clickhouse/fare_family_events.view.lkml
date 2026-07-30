@@ -643,6 +643,31 @@ view: fare_family_events {
     sql: ${master_options_displayed_count} > 0 OR ${slave_options_displayed_count} > 0 ;;
   }
 
+  dimension: has_gds_options {
+    hidden: yes
+    type: yesno
+    sql: (${master_gds_upsell_count} + ${slave_gds_upsell_count}) > 0 ;;
+  }
+
+  dimension: is_repetitive_checkout {
+    hidden: yes
+    type: yesno
+    sql: ${ineligibility_reason} = 'upsell_already_called_for_package' ;;
+  }
+
+  dimension: is_upgraded_checkout {
+    hidden: yes
+    type: yesno
+    sql: ${ineligibility_reason} = 'upsell_already_called_for_upgraded_package' ;;
+  }
+
+  dimension: is_regular_checkout {
+    hidden: yes
+    type: yesno
+    sql: ${ineligibility_reason} IS NULL
+      OR ${ineligibility_reason} NOT IN ('upsell_already_called_for_package', 'upsell_already_called_for_upgraded_package') ;;
+  }
+
   # ------------------------------------------------------------------
   # Measures
   # ------------------------------------------------------------------
@@ -739,5 +764,147 @@ view: fare_family_events {
     group_label: "11. Measures"
     label: "Total Air Revenue Uplift"
     description: "Sum of (current - original) air revenue where both present."
+  }
+
+  # ------------------------------------------------------------------
+  # Coverage funnel (source-agnostic — works across Amadeus, NDC, aggregators).
+  # Denominator is distinct checkout events; every count is count_distinct(event_id)
+  # so the ~0.14% source duplicates do not inflate rates.
+  # ------------------------------------------------------------------
+
+  measure: checkouts_safe_denom {
+    hidden: yes
+    type: number
+    sql: NULLIF(${distinct_event_count}, 0) ;;
+  }
+
+  measure: options_displayed_distinct {
+    type: count_distinct
+    sql: ${event_id} ;;
+    filters: [has_options_displayed: "yes"]
+    group_label: "12. Coverage Funnel"
+    label: "Checkouts with Upsell Shown"
+    description: "Distinct checkout events where master or slave options were displayed."
+  }
+
+  measure: options_displayed_pct {
+    type: number
+    sql: 1.0 * ${options_displayed_distinct} / ${checkouts_safe_denom} ;;
+    value_format_name: percent_2
+    group_label: "12. Coverage Funnel"
+    label: "Coverage %"
+    description: "Checkouts with an upsell shown / distinct checkout events. Source-agnostic."
+  }
+
+  measure: gds_options_returned_count {
+    type: count_distinct
+    sql: ${event_id} ;;
+    filters: [has_gds_options: "yes"]
+    group_label: "12. Coverage Funnel"
+    label: "Checkouts with Options Returned"
+    description: "Distinct checkout events where the content source returned upsell options (before display filtering)."
+  }
+
+  measure: gds_options_returned_pct {
+    type: number
+    sql: 1.0 * ${gds_options_returned_count} / ${checkouts_safe_denom} ;;
+    value_format_name: percent_2
+    group_label: "12. Coverage Funnel"
+    label: "Options Returned %"
+    description: "Checkouts with options returned by the source / distinct checkout events."
+  }
+
+  measure: repetitive_checkouts_count {
+    type: count_distinct
+    sql: ${event_id} ;;
+    filters: [is_repetitive_checkout: "yes"]
+    group_label: "12. Coverage Funnel"
+    label: "Repetitive Checkouts"
+    description: "Cached re-render (ineligibility_reason = upsell_already_called_for_package)."
+  }
+
+  measure: repetitive_checkouts_pct {
+    type: number
+    sql: 1.0 * ${repetitive_checkouts_count} / ${checkouts_safe_denom} ;;
+    value_format_name: percent_2
+    group_label: "12. Coverage Funnel"
+    label: "Repetitive Checkouts %"
+  }
+
+  measure: upgraded_checkouts_count {
+    type: count_distinct
+    sql: ${event_id} ;;
+    filters: [is_upgraded_checkout: "yes"]
+    group_label: "12. Coverage Funnel"
+    label: "Upgraded Checkouts"
+    description: "ineligibility_reason = upsell_already_called_for_upgraded_package."
+  }
+
+  measure: upgraded_checkouts_pct {
+    type: number
+    sql: 1.0 * ${upgraded_checkouts_count} / ${checkouts_safe_denom} ;;
+    value_format_name: percent_2
+    group_label: "12. Coverage Funnel"
+    label: "Upgraded Checkouts %"
+  }
+
+  measure: regular_checkouts_count {
+    type: count_distinct
+    sql: ${event_id} ;;
+    filters: [is_regular_checkout: "yes"]
+    group_label: "12. Coverage Funnel"
+    label: "Regular Checkouts"
+    description: "Freshly evaluated checkouts (not repetitive, not upgraded)."
+  }
+
+  measure: regular_checkouts_pct {
+    type: number
+    sql: 1.0 * ${regular_checkouts_count} / ${checkouts_safe_denom} ;;
+    value_format_name: percent_2
+    group_label: "12. Coverage Funnel"
+    label: "Regular Checkouts %"
+  }
+
+  measure: upgraded_package_count {
+    type: count_distinct
+    sql: ${event_id} ;;
+    filters: [is_upgraded_package: "yes"]
+    group_label: "12. Coverage Funnel"
+    label: "Upgraded-package Checkouts"
+    description: "Distinct checkout events flagged is_upgraded_package."
+  }
+
+  measure: no_options_found_count {
+    type: count_distinct
+    sql: ${event_id} ;;
+    filters: [no_options_reason: "no_options_found"]
+    group_label: "12. Coverage Funnel"
+    label: "No Options Found"
+    description: "Checkouts where no upsell options were found."
+  }
+
+  measure: no_options_found_pct {
+    type: number
+    sql: 1.0 * ${no_options_found_count} / ${checkouts_safe_denom} ;;
+    value_format_name: percent_2
+    group_label: "12. Coverage Funnel"
+    label: "No Options Found %"
+  }
+
+  measure: all_options_filtered_count {
+    type: count_distinct
+    sql: ${event_id} ;;
+    filters: [no_options_reason: "all_options_filtered"]
+    group_label: "12. Coverage Funnel"
+    label: "All Options Filtered"
+    description: "Checkouts where all options were filtered out before display."
+  }
+
+  measure: all_options_filtered_pct {
+    type: number
+    sql: 1.0 * ${all_options_filtered_count} / ${checkouts_safe_denom} ;;
+    value_format_name: percent_2
+    group_label: "12. Coverage Funnel"
+    label: "All Options Filtered %"
   }
 }
