@@ -2,6 +2,7 @@ view: fare_family_events {
   sql_table_name: upsells.fare_family_upgrade_options_event ;;
   # Parallel event-table view for the new fare-family board (Trello #3121).
   # Independent of checkout_with_upsell / upsell_coverage_new; those stay until cut-over.
+  # Visible surface is scoped to the checkout column set (context='checkout' board).
 
   # ------------------------------------------------------------------
   # Identifiers
@@ -9,6 +10,7 @@ view: fare_family_events {
 
   dimension: event_id {
     primary_key: yes
+    hidden: yes
     type: string
     sql: ${TABLE}.event_id ;;
     group_label: "1. Identifiers"
@@ -16,10 +18,12 @@ view: fare_family_events {
     # Why (2026-07-29, FM): source emits ~0.14%/day exact full-row duplicates and no
     # column combination dedups them, so this is an approximate key (~99.86% unique).
     # Safe as PK while the view has no joins; use distinct_event_count for entity counts.
+    # Hidden from the picker per the checkout column set; still the primary key.
     description: "Event id. Approximate key — source emits ~0.14% duplicate rows; use Distinct Events for dedup-safe counts."
   }
 
   dimension: event_key {
+    hidden: yes
     type: string
     sql: ${TABLE}.event_key ;;
     group_label: "1. Identifiers"
@@ -77,7 +81,7 @@ view: fare_family_events {
     sql: ${TABLE}.timestamp ;;
     group_label: "2. Timestamps"
     label: "Event"
-    description: "Event time (seconds)."
+    description: "Event time (seconds). Primary time dimension."
   }
 
   dimension_group: timestamp_micro {
@@ -318,10 +322,95 @@ view: fare_family_events {
   }
 
   # ------------------------------------------------------------------
-  # Passengers
+  # Filtered options (dropped before display)
+  # ------------------------------------------------------------------
+
+  dimension: master_filtered_empty_count {
+    type: number
+    sql: ${TABLE}.master_filtered_empty_count ;;
+    group_label: "6a. Filtered Options"
+    label: "Master Filtered Empty"
+    description: "Options dropped as empty (master)."
+  }
+
+  dimension: slave_filtered_empty_count {
+    type: number
+    sql: ${TABLE}.slave_filtered_empty_count ;;
+    group_label: "6a. Filtered Options"
+    label: "Slave Filtered Empty"
+    description: "Options dropped as empty (slave)."
+  }
+
+  dimension: master_filtered_cheaper_count {
+    type: number
+    sql: ${TABLE}.master_filtered_cheaper_count ;;
+    group_label: "6a. Filtered Options"
+    label: "Master Filtered Cheaper"
+    description: "Options dropped as cheaper than base (master)."
+  }
+
+  dimension: slave_filtered_cheaper_count {
+    type: number
+    sql: ${TABLE}.slave_filtered_cheaper_count ;;
+    group_label: "6a. Filtered Options"
+    label: "Slave Filtered Cheaper"
+    description: "Options dropped as cheaper than base (slave)."
+  }
+
+  dimension: master_filtered_lesser_count {
+    type: number
+    sql: ${TABLE}.master_filtered_lesser_count ;;
+    group_label: "6a. Filtered Options"
+    label: "Master Filtered Lesser"
+    description: "Options dropped as lesser value (master)."
+  }
+
+  dimension: slave_filtered_lesser_count {
+    type: number
+    sql: ${TABLE}.slave_filtered_lesser_count ;;
+    group_label: "6a. Filtered Options"
+    label: "Slave Filtered Lesser"
+    description: "Options dropped as lesser value (slave)."
+  }
+
+  dimension: master_filtered_multiticket_count {
+    type: number
+    sql: ${TABLE}.master_filtered_multiticket_count ;;
+    group_label: "6a. Filtered Options"
+    label: "Master Filtered Multiticket"
+    description: "Options dropped by multi-ticket rules (master)."
+  }
+
+  dimension: slave_filtered_multiticket_count {
+    type: number
+    sql: ${TABLE}.slave_filtered_multiticket_count ;;
+    group_label: "6a. Filtered Options"
+    label: "Slave Filtered Multiticket"
+    description: "Options dropped by multi-ticket rules (slave)."
+  }
+
+  dimension: master_filtered_price_cap_count {
+    type: number
+    sql: ${TABLE}.master_filtered_price_cap_count ;;
+    group_label: "6a. Filtered Options"
+    label: "Master Filtered Price Cap"
+    description: "Options dropped by price cap (master)."
+  }
+
+  dimension: slave_filtered_price_cap_count {
+    type: number
+    sql: ${TABLE}.slave_filtered_price_cap_count ;;
+    group_label: "6a. Filtered Options"
+    label: "Slave Filtered Price Cap"
+    description: "Options dropped by price cap (slave)."
+  }
+
+  # ------------------------------------------------------------------
+  # Passengers (hidden — not part of the checkout column set)
   # ------------------------------------------------------------------
 
   dimension: adt_pax_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.adt_pax_count ;;
     group_label: "7. Passengers"
@@ -330,6 +419,7 @@ view: fare_family_events {
   }
 
   dimension: chd_pax_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.chd_pax_count ;;
     group_label: "7. Passengers"
@@ -338,6 +428,7 @@ view: fare_family_events {
   }
 
   dimension: ins_pax_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.ins_pax_count ;;
     group_label: "7. Passengers"
@@ -346,6 +437,7 @@ view: fare_family_events {
   }
 
   dimension: inl_pax_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.inl_pax_count ;;
     group_label: "7. Passengers"
@@ -354,6 +446,7 @@ view: fare_family_events {
   }
 
   dimension: total_pax_count {
+    hidden: yes
     type: number
     sql: ${adt_pax_count} + ${chd_pax_count} + ${ins_pax_count} + ${inl_pax_count} ;;
     group_label: "7. Passengers"
@@ -453,12 +546,60 @@ view: fare_family_events {
     description: "Office id of the base package (master)."
   }
 
+  dimension: original_slave_office_id {
+    type: string
+    sql: ${TABLE}.original_slave_office_id ;;
+    group_label: "9. GDS Routing"
+    label: "Original Slave Office ID"
+    description: "Office id of the base package (slave)."
+  }
+
   dimension: current_master_office_id {
     type: string
     sql: ${TABLE}.current_master_office_id ;;
     group_label: "9. GDS Routing"
     label: "Current Master Office ID"
     description: "Office id of the current/upgraded package (master)."
+  }
+
+  dimension: current_slave_office_id {
+    type: string
+    sql: ${TABLE}.current_slave_office_id ;;
+    group_label: "9. GDS Routing"
+    label: "Current Slave Office ID"
+    description: "Office id of the current/upgraded package (slave)."
+  }
+
+  dimension: original_master_target_id {
+    type: number
+    sql: ${TABLE}.original_master_target_id ;;
+    group_label: "9. GDS Routing"
+    label: "Original Master Target ID"
+    description: "Target id of the base package (master)."
+  }
+
+  dimension: original_slave_target_id {
+    type: number
+    sql: ${TABLE}.original_slave_target_id ;;
+    group_label: "9. GDS Routing"
+    label: "Original Slave Target ID"
+    description: "Target id of the base package (slave)."
+  }
+
+  dimension: current_master_target_id {
+    type: number
+    sql: ${TABLE}.current_master_target_id ;;
+    group_label: "9. GDS Routing"
+    label: "Current Master Target ID"
+    description: "Target id of the current/upgraded package (master)."
+  }
+
+  dimension: current_slave_target_id {
+    type: number
+    sql: ${TABLE}.current_slave_target_id ;;
+    group_label: "9. GDS Routing"
+    label: "Current Slave Target ID"
+    description: "Target id of the current/upgraded package (slave)."
   }
 
   # ------------------------------------------------------------------
