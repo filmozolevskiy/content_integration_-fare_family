@@ -907,4 +907,58 @@ view: fare_family_events {
     group_label: "12. Coverage Funnel"
     label: "All Options Filtered %"
   }
+
+  # ------------------------------------------------------------------
+  # Board-1518 parity measures. coverage_pct is the "Coverage" table
+  # calc from dashboard 1518 (Offers Shown % + Upgraded Checkouts %),
+  # meant to be used with repetitive checkouts excluded
+  # (ineligibility_reason != 'upsell_already_called_for_package').
+  # The MT / Non-MT measures replace the dashboard's ad-hoc filtered
+  # measures so the MT x Non-MT tiles can be rebuilt via the MCP.
+  # ------------------------------------------------------------------
+
+  measure: coverage_pct {
+    type: number
+    sql: ${options_displayed_pct} + ${upgraded_checkouts_pct} ;;
+    value_format_name: percent_1
+    group_label: "12. Coverage Funnel"
+    label: "Coverage"
+    description: "Offers shown % + upgraded checkouts %. Mirrors board 1518 Coverage; use with repetitive checkouts excluded."
+  }
+
+  measure: multiticket_checkouts {
+    type: count_distinct
+    sql: ${event_id} ;;
+    filters: [is_multiticket: "yes"]
+    group_label: "12. Coverage Funnel"
+    label: "Multiticket Checkouts"
+    description: "Distinct checkout events on multi-ticket combinations."
+  }
+
+  measure: non_multiticket_checkouts {
+    type: count_distinct
+    sql: ${event_id} ;;
+    filters: [is_multiticket: "no"]
+    group_label: "12. Coverage Funnel"
+    label: "Non-Multiticket Checkouts"
+    description: "Distinct checkout events on single-ticket combinations."
+  }
+
+  measure: multiticket_upgraded_checkouts {
+    type: count_distinct
+    sql: ${event_id} ;;
+    filters: [is_multiticket: "yes", is_upgraded_checkout: "yes"]
+    group_label: "12. Coverage Funnel"
+    label: "Upgraded Multiticket Checkouts"
+    description: "Distinct upgraded checkout events on multi-ticket combinations."
+  }
+
+  measure: non_multiticket_upgraded_checkouts {
+    type: count_distinct
+    sql: ${event_id} ;;
+    filters: [is_multiticket: "no", is_upgraded_checkout: "yes"]
+    group_label: "12. Coverage Funnel"
+    label: "Upgraded Non-Multiticket Checkouts"
+    description: "Distinct upgraded checkout events on single-ticket combinations."
+  }
 }
