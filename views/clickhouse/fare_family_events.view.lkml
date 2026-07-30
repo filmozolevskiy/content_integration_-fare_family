@@ -64,11 +64,14 @@ view: fare_family_events {
   }
 
   dimension: booking_id {
+    hidden: yes
     type: number
     sql: ${TABLE}.booking_id ;;
     group_label: "1. Identifiers"
-    label: "Booking ID"
-    description: "Resulting ota.bookings.id. Sparsely populated (~0.05%) until linkage lands."
+    label: "Booking ID (raw)"
+    # Always NULL under the checkout lock — booking_id lands on post-booking events.
+    # The usable booking link is fare_family_booking_lookup.booking_id via the event_key join.
+    description: "Raw column, NULL at checkout. Use Booking ID from the booking lookup instead."
   }
 
   # ------------------------------------------------------------------
@@ -634,12 +637,6 @@ view: fare_family_events {
     sql: ${checkout_id} IS NOT NULL AND ${checkout_id} != '' AND ${checkout_id} != 'undefined' ;;
   }
 
-  dimension: has_booking_id {
-    hidden: yes
-    type: yesno
-    sql: ${booking_id} IS NOT NULL ;;
-  }
-
   dimension: has_options_displayed {
     hidden: yes
     type: yesno
@@ -691,12 +688,22 @@ view: fare_family_events {
     description: "Share of checkout-context events with a usable checkout_id. QA gap tracker for mobile app / agencia."
   }
 
-  measure: booking_linked_count {
-    type: count
-    filters: [has_booking_id: "yes"]
+  measure: booking_linked_events {
+    type: count_distinct
+    sql: ${event_id} ;;
+    filters: [fare_family_booking_lookup.is_booked: "yes"]
     group_label: "11. Measures"
-    label: "Events Linked to a Booking"
-    description: "Events with booking_id populated. Near zero until linkage lands."
+    label: "Booking-linked Checkout Events"
+    description: "Distinct checkout events matched to a booking via event_key (post-booking lookup)."
+  }
+
+  measure: booking_rate {
+    type: number
+    sql: 1.0 * ${booking_linked_events} / NULLIF(${distinct_event_count}, 0) ;;
+    value_format_name: percent_2
+    group_label: "11. Measures"
+    label: "Booking Rate"
+    description: "Booking-linked checkout events / distinct checkout events."
   }
 
   measure: options_displayed_event_count {
