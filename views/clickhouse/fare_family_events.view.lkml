@@ -909,56 +909,88 @@ view: fare_family_events {
   }
 
   # ------------------------------------------------------------------
-  # Board-1518 parity measures. coverage_pct is the "Coverage" table
-  # calc from dashboard 1518 (Offers Shown % + Upgraded Checkouts %),
-  # meant to be used with repetitive checkouts excluded
-  # (ineligibility_reason != 'upsell_already_called_for_package').
-  # The MT / Non-MT measures replace the dashboard's ad-hoc filtered
-  # measures so the MT x Non-MT tiles can be rebuilt via the MCP.
+  # Checkout-grain coverage (Trello #3121). Grain = distinct checkout_id
+  # in checkout context. This is a NEW-TABLE metric: "share of checkouts
+  # where an upsell option was available". It is deliberately NOT
+  # comparable to board 1518 coverage (different pipeline, population,
+  # numerator and eligibility taxonomy). Denominator includes cached
+  # re-renders, since each checkout_id is a real checkout record.
   # ------------------------------------------------------------------
 
+  measure: distinct_checkouts {
+    type: count_distinct
+    sql: ${checkout_id} ;;
+    filters: [has_valid_checkout_id: "yes"]
+    group_label: "12. Coverage Funnel"
+    label: "Distinct Checkouts"
+    description: "count_distinct(checkout_id) in checkout context. Denominator for checkout coverage."
+  }
+
+  measure: checkouts_with_options {
+    type: count_distinct
+    sql: ${checkout_id} ;;
+    filters: [has_valid_checkout_id: "yes", has_options_displayed: "yes"]
+    group_label: "12. Coverage Funnel"
+    label: "Checkouts with Options Available"
+    description: "Distinct checkouts with at least one event where master or slave options were displayed."
+  }
+
+  measure: checkout_coverage_pct {
+    type: number
+    sql: 1.0 * ${checkouts_with_options} / NULLIF(${distinct_checkouts}, 0) ;;
+    value_format_name: percent_1
+    group_label: "12. Coverage Funnel"
+    label: "Checkout Coverage"
+    description: "Distinct checkouts with an upsell option available / distinct checkouts (checkout context). New-table metric; not comparable to board 1518 coverage."
+  }
+
+  # Event-grain 1518-formula coverage. Hidden: reads >100% on this table
+  # because options_displayed and upgraded overlap at event grain. Kept
+  # for reference only; use checkout_coverage_pct on the board.
   measure: coverage_pct {
+    hidden: yes
     type: number
     sql: ${options_displayed_pct} + ${upgraded_checkouts_pct} ;;
     value_format_name: percent_1
     group_label: "12. Coverage Funnel"
-    label: "Coverage"
-    description: "Offers shown % + upgraded checkouts %. Mirrors board 1518 Coverage; use with repetitive checkouts excluded."
+    label: "Coverage (event-grain sum, reference only)"
+    description: "Offers shown % + upgraded checkouts % at event grain. Hidden — overlaps to >100%; not a checkout metric."
   }
 
+  # MT / Non-MT splits at checkout grain, for the MT x Non-MT tiles.
   measure: multiticket_checkouts {
     type: count_distinct
-    sql: ${event_id} ;;
-    filters: [is_multiticket: "yes"]
+    sql: ${checkout_id} ;;
+    filters: [has_valid_checkout_id: "yes", is_multiticket: "yes"]
     group_label: "12. Coverage Funnel"
     label: "Multiticket Checkouts"
-    description: "Distinct checkout events on multi-ticket combinations."
+    description: "Distinct checkouts on multi-ticket combinations."
   }
 
   measure: non_multiticket_checkouts {
     type: count_distinct
-    sql: ${event_id} ;;
-    filters: [is_multiticket: "no"]
+    sql: ${checkout_id} ;;
+    filters: [has_valid_checkout_id: "yes", is_multiticket: "no"]
     group_label: "12. Coverage Funnel"
     label: "Non-Multiticket Checkouts"
-    description: "Distinct checkout events on single-ticket combinations."
+    description: "Distinct checkouts on single-ticket combinations."
   }
 
   measure: multiticket_upgraded_checkouts {
     type: count_distinct
-    sql: ${event_id} ;;
-    filters: [is_multiticket: "yes", is_upgraded_checkout: "yes"]
+    sql: ${checkout_id} ;;
+    filters: [has_valid_checkout_id: "yes", is_multiticket: "yes", is_upgraded_checkout: "yes"]
     group_label: "12. Coverage Funnel"
     label: "Upgraded Multiticket Checkouts"
-    description: "Distinct upgraded checkout events on multi-ticket combinations."
+    description: "Distinct upgraded checkouts on multi-ticket combinations."
   }
 
   measure: non_multiticket_upgraded_checkouts {
     type: count_distinct
-    sql: ${event_id} ;;
-    filters: [is_multiticket: "no", is_upgraded_checkout: "yes"]
+    sql: ${checkout_id} ;;
+    filters: [has_valid_checkout_id: "yes", is_multiticket: "no", is_upgraded_checkout: "yes"]
     group_label: "12. Coverage Funnel"
     label: "Upgraded Non-Multiticket Checkouts"
-    description: "Distinct upgraded checkout events on single-ticket combinations."
+    description: "Distinct upgraded checkouts on single-ticket combinations."
   }
 }
