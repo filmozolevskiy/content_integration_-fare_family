@@ -202,6 +202,19 @@ view: fare_family_events {
     group_label: "4. Eligibility"
     label: "Ineligibility Reason"
     description: "Why ineligible; dominated by upsell_already_called_for_package (preload dedup)."
+    # Hardcoded so the filter dropdown loads instantly (a SELECT DISTINCT on this
+    # table is slow). Full enum as of 2026-08-13 (90-day scan). Add new values here
+    # when they appear (e.g. ineligible_for_currency landed 2026-08-07).
+    suggestions: [
+      "upsell_already_called_for_package",
+      "upsell_already_called_for_upgraded_package",
+      "ineligible_for_inl",
+      "ineligible_for_bus_train",
+      "ineligible_for_tablets",
+      "ineligible_for_carrier",
+      "ineligible_for_currency",
+      "ineligible_for_base_package_mixed_fare_family"
+    ]
   }
 
   dimension: no_options_reason {
