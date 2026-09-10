@@ -9,7 +9,7 @@ view: fare_family_booking_lookup {
          FROM upsells.fare_family_upgrade_options_event
          WHERE context = 'post-booking'
          GROUP BY event_key ;;
-    datagroup_trigger: fare_family_events_daily
+    # datagroup_trigger: fare_family_events_daily
   }
 
   dimension: event_key {
