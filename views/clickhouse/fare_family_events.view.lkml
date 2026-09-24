@@ -142,10 +142,10 @@ view: fare_family_events {
 
   dimension: currency {
     type: string
-    sql: ${TABLE}.currency ;;
+    sql: upper(${TABLE}.currency) ;;
     group_label: "3. Context & Attributes"
     label: "Currency"
-    description: "Display currency."
+    description: "Display currency, upper-cased (source sends both USD and usd)."
   }
 
   dimension: trip_type {
@@ -169,7 +169,7 @@ view: fare_family_events {
     sql: ${TABLE}.is_upgraded_package ;;
     group_label: "3. Context & Attributes"
     label: "Is Upgraded Package"
-    description: "Event is for an already-upgraded package."
+    description: "Source flag: event is for an already-upgraded package. Not the canonical upgraded flag; use Is Upgraded Checkout for upgraded counts."
   }
 
   dimension: is_cached {
@@ -393,15 +393,6 @@ view: fare_family_events {
     group_label: "4. Eligibility"
     label: "Is Upgraded Checkout"
     description: "Yes when the upsell was already called for an upgraded package (ineligibility_reason = upsell_already_called_for_upgraded_package)."
-  }
-
-  dimension: is_regular_checkout {
-    type: yesno
-    sql: ${ineligibility_reason} IS NULL
-      OR ${ineligibility_reason} NOT IN ('upsell_already_called_for_package', 'upsell_already_called_for_upgraded_package') ;;
-    group_label: "4. Eligibility"
-    label: "Is Regular Checkout"
-    description: "Yes when not repetitive and not upgraded-already-called. Caveat: in checkout context ineligibility_reason is always set, so this is also Yes for other ineligible reasons (ineligible_for_inl / tablets / carrier / currency), not only fully-eligible checkouts."
   }
 
   # ------------------------------------------------------------------
@@ -729,249 +720,252 @@ view: fare_family_events {
     sql: ${checkout_id} IS NOT NULL AND ${checkout_id} != '' AND ${checkout_id} != 'undefined' ;;
   }
 
+
   # ------------------------------------------------------------------
   # Measures
   # ------------------------------------------------------------------
 
-  measure: count {
+  measure: event_rows_nbr {
+    alias: [count]
     type: count
     group_label: "11. Measures"
-    label: "Event Rows"
-    description: "Row count (includes ~0.14% source duplicates — use Distinct Events for entities)."
+    label: "Event Rows #"
+    description: "Row count (includes ~0.14% source duplicates — use Distinct Events # for entities)."
     drill_fields: [event_id, search_id, base_package_id, context, device_type, timestamp_time]
   }
 
-  measure: distinct_event_count {
+  measure: distinct_events_nbr {
+    alias: [distinct_event_count]
     hidden: yes
     type: count_distinct
     sql: ${event_id} ;;
     group_label: "11. Measures"
-    label: "Distinct Events"
+    label: "Distinct Events #"
     description: "count_distinct(event_id). Dedup-safe count."
   }
 
-  measure: booking_count{
+  measure: booked_checkouts_nbr {
     type: count_distinct
-    sql: ${event_id} ;;
-    filters: [fare_family_booking_lookup.is_booked: "yes"]
+    sql: ${checkout_id} ;;
+    filters: [has_valid_checkout_id: "yes", fare_family_booking_lookup.is_booked: "yes"]
     group_label: "11. Measures"
-    label: "Booking Count"
-    description: "Distinct checkout events matched to a booking via event_key (post-booking lookup)."
+    label: "Booked Checkouts #"
+    description: "Distinct checkouts linked to a booking through event_key. One booking can link to several checkouts. Not a booking count; use Booking # for bookings."
   }
 
-  measure: booking_rate {
+  measure: booking_rate_pct {
     type: number
-    sql: 1.0 * ${booking_count} / NULLIF(${distinct_event_count}, 0) ;;
+    sql: 1.0 * ${booked_checkouts_nbr} / NULLIF(${distinct_checkouts_nbr}, 0) ;;
     value_format_name: percent_2
     group_label: "11. Measures"
-    label: "Booking Rate"
-    description: "Booking-linked checkout events / distinct checkout events."
+    label: "Booking Rate %"
+    description: "Booked checkouts / distinct checkouts (checkout context). One booking can link to several checkouts; not a conversion rate."
   }
 
+  # Revenue sums hidden (2026-09-24, FM). They add every checkout event, so one
+  # package is counted several times (+7.4% current revenue on 2026-09-22 UTC),
+  # and they add CAD / USD / GBP / EUR together. Rebuild as one value per
+  # checkout_id (argMax by timestamp), split by currency, named *_amt.
   measure: total_current_air_revenue {
+    hidden: yes
     type: sum
     sql: ${current_air_revenue} ;;
     value_format_name: decimal_2
     group_label: "11. Measures"
     label: "Total Current Air Revenue"
-    description: "Sum of current_air_revenue (nulls excluded)."
+    description: "Hidden: counts repeated events and mixes currencies. Do not use."
   }
 
   measure: total_original_air_revenue {
+    hidden: yes
     type: sum
     sql: ${original_air_revenue} ;;
     value_format_name: decimal_2
     group_label: "11. Measures"
     label: "Total Original Air Revenue"
-    description: "Sum of original_air_revenue (nulls excluded)."
+    description: "Hidden: counts repeated events and mixes currencies. Do not use."
   }
 
   measure: total_air_revenue_uplift {
+    hidden: yes
     type: sum
     sql: ${current_air_revenue} - ${original_air_revenue} ;;
     value_format_name: decimal_2
     group_label: "11. Measures"
     label: "Total Air Revenue Uplift"
-    description: "Sum of (current - original) air revenue where both present."
+    description: "Hidden: counts repeated events and mixes currencies. Do not use."
   }
 
   # ------------------------------------------------------------------
-  # Coverage funnel (checkout grain). Denominator = distinct_checkouts
-  # (count_distinct checkout_id); every numerator is count_distinct(checkout_id)
-  # so cached re-render events don't inflate rates.
+  # Checkout-grain coverage funnel (Trello #3121). Grain = distinct checkout_id
+  # in checkout context; every numerator is count_distinct(checkout_id), so
+  # cached re-render events do not inflate rates. Denominator = distinct_checkouts_nbr.
+  # A checkout counts in a bucket when any of its events meets the condition,
+  # so buckets overlap and do not add up to 100%. New-table metric; NOT
+  # comparable to board 1518 coverage.
   # ------------------------------------------------------------------
 
-  measure: distinct_checkouts {
+  measure: distinct_checkouts_nbr {
+    alias: [distinct_checkouts]
     type: count_distinct
     sql: ${checkout_id} ;;
     filters: [has_valid_checkout_id: "yes"]
     group_label: "12. Coverage Funnel"
-    label: "Distinct Checkouts"
+    label: "Checkout #"
     description: "count_distinct(checkout_id) in checkout context. Denominator for checkout coverage."
   }
 
-  measure: checkouts_with_options {
+  measure: checkouts_with_options_nbr {
+    alias: [checkouts_with_options]
     type: count_distinct
     sql: ${checkout_id} ;;
     filters: [has_valid_checkout_id: "yes", has_options_displayed: "yes"]
     group_label: "12. Coverage Funnel"
-    label: "Checkouts with Options Available"
+    label: "Checkouts with Options Available #"
     description: "Distinct checkouts with at least one event where master or slave options were displayed."
   }
 
   measure: checkout_coverage_pct {
     type: number
-    sql: 1.0 * ${checkouts_with_options} / NULLIF(${distinct_checkouts}, 0) ;;
+    sql: 1.0 * ${checkouts_with_options_nbr} / NULLIF(${distinct_checkouts_nbr}, 0) ;;
     value_format_name: percent_1
     group_label: "12. Coverage Funnel"
-    label: "Checkout Coverage"
+    label: "Checkout Coverage %"
     description: "Distinct checkouts with an upsell option available / distinct checkouts (checkout context). New-table metric; not comparable to board 1518 coverage."
   }
 
-  measure: gds_options_returned_count {
+  measure: gds_options_returned_nbr {
+    alias: [gds_options_returned_count]
     type: count_distinct
     sql: ${checkout_id} ;;
     filters: [has_valid_checkout_id: "yes", has_gds_options: "yes"]
     group_label: "12. Coverage Funnel"
-    label: "Checkouts with Options Returned"
+    label: "Checkouts with Options Returned #"
     description: "Distinct checkouts where the content source returned upsell options (before display filtering)."
   }
 
   measure: gds_options_returned_pct {
     type: number
-    sql: 1.0 * ${gds_options_returned_count} / NULLIF(${distinct_checkouts}, 0) ;;
+    sql: 1.0 * ${gds_options_returned_nbr} / NULLIF(${distinct_checkouts_nbr}, 0) ;;
     value_format_name: percent_2
     group_label: "12. Coverage Funnel"
     label: "Options Returned %"
+    description: "Checkouts where the content source returned upsell options / distinct checkouts. Counts returned options, not necessarily usable ones."
   }
 
-  measure: repetitive_checkouts_count {
+  measure: repetitive_checkouts_nbr {
+    alias: [repetitive_checkouts_count]
     type: count_distinct
     sql: ${checkout_id} ;;
     filters: [has_valid_checkout_id: "yes", is_repetitive_checkout: "yes"]
     group_label: "12. Coverage Funnel"
-    label: "Repetitive Checkouts"
-    description: "Cached re-render (ineligibility_reason = upsell_already_called_for_package)."
+    label: "Repetitive Checkouts #"
+    description: "Cached re-render (ineligibility_reason = upsell_already_called_for_package). One checkout can be in several buckets; do not add them up."
   }
 
   measure: repetitive_checkouts_pct {
     type: number
-    sql: 1.0 * ${repetitive_checkouts_count} / NULLIF(${distinct_checkouts}, 0) ;;
+    sql: 1.0 * ${repetitive_checkouts_nbr} / NULLIF(${distinct_checkouts_nbr}, 0) ;;
     value_format_name: percent_2
     group_label: "12. Coverage Funnel"
     label: "Repetitive Checkouts %"
+    description: "Repetitive checkouts / distinct checkouts. One checkout can be in several buckets; do not add them up."
   }
 
-  measure: upgraded_checkouts_count {
+  measure: upgraded_checkouts_nbr {
+    alias: [upgraded_checkouts_count]
     type: count_distinct
     sql: ${checkout_id} ;;
     filters: [has_valid_checkout_id: "yes", is_upgraded_checkout: "yes"]
     group_label: "12. Coverage Funnel"
-    label: "Upgraded Checkouts"
-    description: "ineligibility_reason = upsell_already_called_for_upgraded_package."
+    label: "Upgraded Checkouts #"
+    description: "ineligibility_reason = upsell_already_called_for_upgraded_package. Canonical upgraded flag. One checkout can be in several buckets; do not add them up."
   }
 
   measure: upgraded_checkouts_pct {
     type: number
-    sql: 1.0 * ${upgraded_checkouts_count} / NULLIF(${distinct_checkouts}, 0) ;;
+    sql: 1.0 * ${upgraded_checkouts_nbr} / NULLIF(${distinct_checkouts_nbr}, 0) ;;
     value_format_name: percent_2
     group_label: "12. Coverage Funnel"
     label: "Upgraded Checkouts %"
+    description: "Upgraded checkouts / distinct checkouts. One checkout can be in several buckets; do not add them up."
   }
 
-  measure: regular_checkouts_count {
-    type: count_distinct
-    sql: ${checkout_id} ;;
-    filters: [has_valid_checkout_id: "yes", is_regular_checkout: "yes"]
-    group_label: "12. Coverage Funnel"
-    label: "Regular Checkouts"
-    description: "Not repetitive and not upgraded-already-called (mostly ineligible_for_* at checkout)."
-  }
-
-  measure: regular_checkouts_pct {
-    type: number
-    sql: 1.0 * ${regular_checkouts_count} / NULLIF(${distinct_checkouts}, 0) ;;
-    value_format_name: percent_2
-    group_label: "12. Coverage Funnel"
-    label: "Regular Checkouts %"
-  }
-
-  measure: upgraded_package_count {
-    type: count_distinct
-    sql: ${checkout_id} ;;
-    filters: [has_valid_checkout_id: "yes", is_upgraded_package: "yes"]
-    group_label: "12. Coverage Funnel"
-    label: "Upgraded-package Checkouts"
-    description: "Distinct checkouts flagged is_upgraded_package (selected an upgraded package)."
-  }
-
-  measure: no_options_found_count {
+  measure: no_options_found_nbr {
+    alias: [no_options_found_count]
     type: count_distinct
     sql: ${checkout_id} ;;
     filters: [has_valid_checkout_id: "yes", no_options_reason: "no_options_found"]
     group_label: "12. Coverage Funnel"
-    label: "No Options Found"
-    description: "Checkouts where no upsell options were found."
+    label: "No Options Found #"
+    description: "Checkouts where no upsell options were found. One checkout can be in several buckets (also Checkout Coverage); do not add them up."
   }
 
   measure: no_options_found_pct {
     type: number
-    sql: 1.0 * ${no_options_found_count} / NULLIF(${distinct_checkouts}, 0) ;;
+    sql: 1.0 * ${no_options_found_nbr} / NULLIF(${distinct_checkouts_nbr}, 0) ;;
     value_format_name: percent_2
     group_label: "12. Coverage Funnel"
     label: "No Options Found %"
+    description: "No-options-found checkouts / distinct checkouts. One checkout can be in several buckets; do not add them up."
   }
 
-  measure: all_options_filtered_count {
+  measure: all_options_filtered_nbr {
+    alias: [all_options_filtered_count]
     type: count_distinct
     sql: ${checkout_id} ;;
     filters: [has_valid_checkout_id: "yes", no_options_reason: "all_options_filtered"]
     group_label: "12. Coverage Funnel"
-    label: "All Options Filtered"
-    description: "Checkouts where all options were filtered out before display."
+    label: "All Options Filtered #"
+    description: "Checkouts where all options were filtered out before display. One checkout can be in several buckets (also Checkout Coverage); do not add them up."
   }
 
   measure: all_options_filtered_pct {
     type: number
-    sql: 1.0 * ${all_options_filtered_count} / NULLIF(${distinct_checkouts}, 0) ;;
+    sql: 1.0 * ${all_options_filtered_nbr} / NULLIF(${distinct_checkouts_nbr}, 0) ;;
     value_format_name: percent_2
     group_label: "12. Coverage Funnel"
     label: "All Options Filtered %"
+    description: "All-options-filtered checkouts / distinct checkouts. One checkout can be in several buckets; do not add them up."
   }
 
-  measure: multiticket_checkouts {
+  measure: multiticket_checkouts_nbr {
+    alias: [multiticket_checkouts]
     type: count_distinct
     sql: ${checkout_id} ;;
     filters: [has_valid_checkout_id: "yes", is_multiticket: "yes"]
     group_label: "12. Coverage Funnel"
-    label: "Multiticket Checkouts"
+    label: "Multiticket Checkouts #"
     description: "Distinct checkouts on multi-ticket combinations."
   }
 
-  measure: non_multiticket_checkouts {
+  measure: non_multiticket_checkouts_nbr {
+    alias: [non_multiticket_checkouts]
     type: count_distinct
     sql: ${checkout_id} ;;
     filters: [has_valid_checkout_id: "yes", is_multiticket: "no"]
     group_label: "12. Coverage Funnel"
-    label: "Non-Multiticket Checkouts"
+    label: "Non-Multiticket Checkouts #"
     description: "Distinct checkouts on single-ticket combinations."
   }
 
-  measure: multiticket_upgraded_checkouts {
+  measure: multiticket_upgraded_checkouts_nbr {
+    alias: [multiticket_upgraded_checkouts]
     type: count_distinct
     sql: ${checkout_id} ;;
     filters: [has_valid_checkout_id: "yes", is_multiticket: "yes", is_upgraded_checkout: "yes"]
     group_label: "12. Coverage Funnel"
-    label: "Upgraded Multiticket Checkouts"
+    label: "Upgraded Multiticket Checkouts #"
     description: "Distinct upgraded checkouts on multi-ticket combinations."
   }
 
-  measure: non_multiticket_upgraded_checkouts {
+  measure: non_multiticket_upgraded_checkouts_nbr {
+    alias: [non_multiticket_upgraded_checkouts]
     type: count_distinct
     sql: ${checkout_id} ;;
     filters: [has_valid_checkout_id: "yes", is_multiticket: "no", is_upgraded_checkout: "yes"]
     group_label: "12. Coverage Funnel"
-    label: "Upgraded Non-Multiticket Checkouts"
+    label: "Upgraded Non-Multiticket Checkouts #"
     description: "Distinct upgraded checkouts on single-ticket combinations."
   }
 }
