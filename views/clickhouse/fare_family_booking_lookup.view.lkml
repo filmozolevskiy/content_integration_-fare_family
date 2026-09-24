@@ -36,11 +36,12 @@ view: fare_family_booking_lookup {
     description: "Checkout event matched to a booking via event_key."
   }
 
-  measure: distinct_bookings {
+  measure: distinct_bookings_nbr {
+    alias: [distinct_bookings]
     type: count_distinct
     sql: ${booking_id} ;;
     group_label: "12. Bookings"
-    label: "Distinct Bookings"
-    description: "count_distinct(booking_id) linked to checkout events in range."
+    label: "Booking #"
+    description: "Unique bookings linked to checkout events in range, through event_key. ~0.9% of event_keys carry more than one booking; only one is kept."
   }
 }
