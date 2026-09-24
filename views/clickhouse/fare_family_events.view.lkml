@@ -750,14 +750,6 @@ view: fare_family_events {
     description: "count_distinct(event_id). Dedup-safe count."
   }
 
-  measure: checkout_count {
-    type: count
-    filters: [context: "checkout", has_valid_checkout_id: "yes"]
-    group_label: "11. Measures"
-    label: "Checkout Events with checkout_id"
-    description: "Checkout-context events carrying a usable checkout_id."
-  }
-
   measure: booking_count{
     type: count_distinct
     sql: ${event_id} ;;
@@ -774,14 +766,6 @@ view: fare_family_events {
     group_label: "11. Measures"
     label: "Booking Rate"
     description: "Booking-linked checkout events / distinct checkout events."
-  }
-
-  measure: options_displayed_count {
-    type: count
-    filters: [has_options_displayed: "yes"]
-    group_label: "11. Measures"
-    label: "Options Displayed Count"
-    description: "Events where master or slave options were displayed."
   }
 
   measure: total_current_air_revenue {
@@ -955,20 +939,6 @@ view: fare_family_events {
     label: "All Options Filtered %"
   }
 
-  # Event-grain 1518-formula coverage. Hidden: reads >100% on this table
-  # because options_displayed and upgraded overlap at event grain. Kept
-  # for reference only; use checkout_coverage_pct on the board.
-  measure: coverage_pct {
-    hidden: yes
-    type: number
-    sql: ${checkout_coverage_pct} + ${upgraded_checkouts_pct} ;;
-    value_format_name: percent_1
-    group_label: "12. Coverage Funnel"
-    label: "Coverage (event-grain sum, reference only)"
-    description: "Offers shown % + upgraded checkouts % at event grain. Hidden — overlaps to >100%; not a checkout metric."
-  }
-
-  # MT / Non-MT splits at checkout grain, for the MT x Non-MT tiles.
   measure: multiticket_checkouts {
     type: count_distinct
     sql: ${checkout_id} ;;
