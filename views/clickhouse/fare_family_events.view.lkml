@@ -32,6 +32,7 @@ view: fare_family_events {
   }
 
   dimension: search_id {
+    hidden: yes
     type: string
     sql: ${TABLE}.search_id ;;
     group_label: "1. Identifiers"
@@ -40,6 +41,7 @@ view: fare_family_events {
   }
 
   dimension: base_package_id {
+    hidden: yes
     type: string
     sql: ${TABLE}.base_package_id ;;
     group_label: "1. Identifiers"
@@ -48,6 +50,7 @@ view: fare_family_events {
   }
 
   dimension: current_package_id {
+    hidden: yes
     type: string
     sql: ${TABLE}.current_package_id ;;
     group_label: "1. Identifiers"
@@ -88,6 +91,7 @@ view: fare_family_events {
   }
 
   dimension_group: timestamp_micro {
+    hidden: yes
     type: time
     timeframes: [raw, time, hour, date, week, month]
     sql: ${TABLE}.timestamp_micro ;;
@@ -101,6 +105,7 @@ view: fare_family_events {
   # ------------------------------------------------------------------
 
   dimension: context {
+    hidden: yes
     type: string
     sql: ${TABLE}.context ;;
     group_label: "3. Context & Attributes"
@@ -119,6 +124,7 @@ view: fare_family_events {
   }
 
   dimension: site_id {
+    hidden: yes
     type: number
     sql: ${TABLE}.site_id ;;
     group_label: "3. Context & Attributes"
@@ -167,6 +173,7 @@ view: fare_family_events {
   }
 
   dimension: is_cached {
+    hidden: yes
     type: yesno
     sql: ${TABLE}.is_cached ;;
     group_label: "3. Context & Attributes"
@@ -187,13 +194,12 @@ view: fare_family_events {
   # ------------------------------------------------------------------
 
   dimension: is_eligible {
+    hidden: yes
     type: yesno
     sql: ${TABLE}.is_eligible ;;
     group_label: "4. Eligibility"
     label: "Is Eligible"
-    # Why (2026-07-29, FM): near-always False (True on ~2 rows/3d) and not an
-    # "upsell shown" flag; do not use as a rate denominator until source confirms meaning.
-    description: "Source flag, near-always False. NOT an upsell-shown flag — confirm meaning before using in rates."
+    description: "Source flag. Is eligible to call to Content source to get FF upgrade options?"
   }
 
   dimension: ineligibility_reason {
@@ -201,7 +207,17 @@ view: fare_family_events {
     sql: ${TABLE}.ineligibility_reason ;;
     group_label: "4. Eligibility"
     label: "Ineligibility Reason"
-    description: "Why ineligible; dominated by upsell_already_called_for_package (preload dedup)."
+    description: "Why the pacakge is ineligible to call Content source to get FF upgrade options?"
+    suggestions: [
+      "upsell_already_called_for_package",
+      "upsell_already_called_for_upgraded_package",
+      "ineligible_for_inl",
+      "ineligible_for_bus_train",
+      "ineligible_for_tablets",
+      "ineligible_for_carrier",
+      "ineligible_for_currency",
+      "ineligible_for_base_package_mixed_fare_family"
+    ]
   }
 
   dimension: no_options_reason {
@@ -209,7 +225,12 @@ view: fare_family_events {
     sql: ${TABLE}.no_options_reason ;;
     group_label: "4. Eligibility"
     label: "No Options Reason"
-    description: "None (options shown), no_options_found, all_options_filtered, one_option_found."
+    description: "Why we didn't display FF options?"
+    suggestions: [
+      "no_options_found",
+      "all_options_filtered",
+      "one_option_found"
+    ]
   }
 
   dimension: gds_no_options_reason {
@@ -218,6 +239,16 @@ view: fare_family_events {
     group_label: "4. Eligibility"
     label: "GDS No Options Reason"
     description: "Why the GDS returned no options."
+    suggestions: [
+      "no_upsells_returned",
+      "all_upsells_mixed_ff",
+      "only_original_ff",
+      "different_ptc",
+      "original_package_highest_ff",
+      "no_eligible_options",
+      "upsell_not_returned_original_ff",
+      "gds_timeout"
+    ]
   }
 
   dimension: has_atpco_features {
@@ -261,6 +292,7 @@ view: fare_family_events {
   # ------------------------------------------------------------------
 
   dimension: master_gds_upsell_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.master_gds_upsell_count ;;
     group_label: "6. Options"
@@ -269,6 +301,7 @@ view: fare_family_events {
   }
 
   dimension: slave_gds_upsell_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.slave_gds_upsell_count ;;
     group_label: "6. Options"
@@ -277,6 +310,7 @@ view: fare_family_events {
   }
 
   dimension: master_options_displayed_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.master_options_displayed_count ;;
     group_label: "6. Options"
@@ -285,6 +319,7 @@ view: fare_family_events {
   }
 
   dimension: slave_options_displayed_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.slave_options_displayed_count ;;
     group_label: "6. Options"
@@ -293,6 +328,7 @@ view: fare_family_events {
   }
 
   dimension: master_fare_family_names {
+    hidden: yes
     type: string
     sql: ${TABLE}.master_fare_family_names ;;
     group_label: "6. Options"
@@ -301,6 +337,7 @@ view: fare_family_events {
   }
 
   dimension: slave_fare_family_names {
+    hidden: yes
     type: string
     sql: ${TABLE}.slave_fare_family_names ;;
     group_label: "6. Options"
@@ -309,6 +346,7 @@ view: fare_family_events {
   }
 
   dimension: master_displayed_fare_family_names {
+    hidden: yes
     type: string
     sql: ${TABLE}.master_displayed_fare_family_names ;;
     group_label: "6. Options"
@@ -317,6 +355,7 @@ view: fare_family_events {
   }
 
   dimension: slave_displayed_fare_family_names {
+    hidden: yes
     type: string
     sql: ${TABLE}.slave_displayed_fare_family_names ;;
     group_label: "6. Options"
@@ -324,11 +363,53 @@ view: fare_family_events {
     description: "Fare-family names displayed (slave)."
   }
 
+  dimension: has_options_displayed {
+    type: yesno
+    sql: ${master_options_displayed_count} > 0 OR ${slave_options_displayed_count} > 0 ;;
+    group_label: "6. Options"
+    label: "Has Options Displayed"
+    description: "Yes when master or slave upsell options were displayed to the customer for this event."
+  }
+
+  dimension: has_gds_options {
+    type: yesno
+    sql: (${master_gds_upsell_count} + ${slave_gds_upsell_count}) > 0 ;;
+    group_label: "6. Options"
+    label: "Has GDS Options Returned"
+    description: "Yes when the content source returned any upsell options (master + slave GDS upsell count > 0). Counts options RETURNED, not necessarily usable — mixed-fare-family and original-highest cases still count here."
+  }
+
+  dimension: is_repetitive_checkout {
+    type: yesno
+    sql: ${ineligibility_reason} = 'upsell_already_called_for_package' ;;
+    group_label: "4. Eligibility"
+    label: "Is Repetitive Checkout"
+    description: "Yes when the upsell was already called for this package (ineligibility_reason = upsell_already_called_for_package) — a cached re-render."
+  }
+
+  dimension: is_upgraded_checkout {
+    type: yesno
+    sql: ${ineligibility_reason} = 'upsell_already_called_for_upgraded_package' ;;
+    group_label: "4. Eligibility"
+    label: "Is Upgraded Checkout"
+    description: "Yes when the upsell was already called for an upgraded package (ineligibility_reason = upsell_already_called_for_upgraded_package)."
+  }
+
+  dimension: is_regular_checkout {
+    type: yesno
+    sql: ${ineligibility_reason} IS NULL
+      OR ${ineligibility_reason} NOT IN ('upsell_already_called_for_package', 'upsell_already_called_for_upgraded_package') ;;
+    group_label: "4. Eligibility"
+    label: "Is Regular Checkout"
+    description: "Yes when not repetitive and not upgraded-already-called. Caveat: in checkout context ineligibility_reason is always set, so this is also Yes for other ineligible reasons (ineligible_for_inl / tablets / carrier / currency), not only fully-eligible checkouts."
+  }
+
   # ------------------------------------------------------------------
   # Filtered options (dropped before display)
   # ------------------------------------------------------------------
 
   dimension: master_filtered_empty_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.master_filtered_empty_count ;;
     group_label: "6a. Filtered Options"
@@ -337,6 +418,7 @@ view: fare_family_events {
   }
 
   dimension: slave_filtered_empty_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.slave_filtered_empty_count ;;
     group_label: "6a. Filtered Options"
@@ -345,6 +427,7 @@ view: fare_family_events {
   }
 
   dimension: master_filtered_cheaper_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.master_filtered_cheaper_count ;;
     group_label: "6a. Filtered Options"
@@ -353,6 +436,7 @@ view: fare_family_events {
   }
 
   dimension: slave_filtered_cheaper_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.slave_filtered_cheaper_count ;;
     group_label: "6a. Filtered Options"
@@ -361,6 +445,7 @@ view: fare_family_events {
   }
 
   dimension: master_filtered_lesser_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.master_filtered_lesser_count ;;
     group_label: "6a. Filtered Options"
@@ -369,6 +454,7 @@ view: fare_family_events {
   }
 
   dimension: slave_filtered_lesser_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.slave_filtered_lesser_count ;;
     group_label: "6a. Filtered Options"
@@ -377,6 +463,7 @@ view: fare_family_events {
   }
 
   dimension: master_filtered_multiticket_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.master_filtered_multiticket_count ;;
     group_label: "6a. Filtered Options"
@@ -385,6 +472,7 @@ view: fare_family_events {
   }
 
   dimension: slave_filtered_multiticket_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.slave_filtered_multiticket_count ;;
     group_label: "6a. Filtered Options"
@@ -393,6 +481,7 @@ view: fare_family_events {
   }
 
   dimension: master_filtered_price_cap_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.master_filtered_price_cap_count ;;
     group_label: "6a. Filtered Options"
@@ -401,6 +490,7 @@ view: fare_family_events {
   }
 
   dimension: slave_filtered_price_cap_count {
+    hidden: yes
     type: number
     sql: ${TABLE}.slave_filtered_price_cap_count ;;
     group_label: "6a. Filtered Options"
@@ -590,6 +680,7 @@ view: fare_family_events {
   }
 
   dimension: current_master_target_id {
+    hidden: yes
     type: number
     sql: ${TABLE}.current_master_target_id ;;
     group_label: "9. GDS Routing"
@@ -598,6 +689,7 @@ view: fare_family_events {
   }
 
   dimension: current_slave_target_id {
+    hidden: yes
     type: number
     sql: ${TABLE}.current_slave_target_id ;;
     group_label: "9. GDS Routing"
@@ -637,37 +729,6 @@ view: fare_family_events {
     sql: ${checkout_id} IS NOT NULL AND ${checkout_id} != '' AND ${checkout_id} != 'undefined' ;;
   }
 
-  dimension: has_options_displayed {
-    hidden: yes
-    type: yesno
-    sql: ${master_options_displayed_count} > 0 OR ${slave_options_displayed_count} > 0 ;;
-  }
-
-  dimension: has_gds_options {
-    hidden: yes
-    type: yesno
-    sql: (${master_gds_upsell_count} + ${slave_gds_upsell_count}) > 0 ;;
-  }
-
-  dimension: is_repetitive_checkout {
-    hidden: yes
-    type: yesno
-    sql: ${ineligibility_reason} = 'upsell_already_called_for_package' ;;
-  }
-
-  dimension: is_upgraded_checkout {
-    hidden: yes
-    type: yesno
-    sql: ${ineligibility_reason} = 'upsell_already_called_for_upgraded_package' ;;
-  }
-
-  dimension: is_regular_checkout {
-    hidden: yes
-    type: yesno
-    sql: ${ineligibility_reason} IS NULL
-      OR ${ineligibility_reason} NOT IN ('upsell_already_called_for_package', 'upsell_already_called_for_upgraded_package') ;;
-  }
-
   # ------------------------------------------------------------------
   # Measures
   # ------------------------------------------------------------------
@@ -681,6 +742,7 @@ view: fare_family_events {
   }
 
   measure: distinct_event_count {
+    hidden: yes
     type: count_distinct
     sql: ${event_id} ;;
     group_label: "11. Measures"
@@ -688,15 +750,7 @@ view: fare_family_events {
     description: "count_distinct(event_id). Dedup-safe count."
   }
 
-  measure: checkout_context_count {
-    type: count
-    filters: [context: "checkout"]
-    group_label: "11. Measures"
-    label: "Checkout-context Events"
-    description: "Events at context=checkout. Denominator for checkout_id coverage."
-  }
-
-  measure: checkout_id_coverage_count {
+  measure: checkout_count {
     type: count
     filters: [context: "checkout", has_valid_checkout_id: "yes"]
     group_label: "11. Measures"
@@ -704,38 +758,29 @@ view: fare_family_events {
     description: "Checkout-context events carrying a usable checkout_id."
   }
 
-  measure: checkout_id_coverage_pct {
-    type: number
-    sql: 1.0 * ${checkout_id_coverage_count} / NULLIF(${checkout_context_count}, 0) ;;
-    value_format_name: percent_2
-    group_label: "11. Measures"
-    label: "checkout_id Coverage (checkout)"
-    description: "Share of checkout-context events with a usable checkout_id. QA gap tracker for mobile app / agencia."
-  }
-
-  measure: booking_linked_events {
+  measure: booking_count{
     type: count_distinct
     sql: ${event_id} ;;
     filters: [fare_family_booking_lookup.is_booked: "yes"]
     group_label: "11. Measures"
-    label: "Booking-linked Checkout Events"
+    label: "Booking Count"
     description: "Distinct checkout events matched to a booking via event_key (post-booking lookup)."
   }
 
   measure: booking_rate {
     type: number
-    sql: 1.0 * ${booking_linked_events} / NULLIF(${distinct_event_count}, 0) ;;
+    sql: 1.0 * ${booking_count} / NULLIF(${distinct_event_count}, 0) ;;
     value_format_name: percent_2
     group_label: "11. Measures"
     label: "Booking Rate"
     description: "Booking-linked checkout events / distinct checkout events."
   }
 
-  measure: options_displayed_event_count {
+  measure: options_displayed_count {
     type: count
     filters: [has_options_displayed: "yes"]
     group_label: "11. Measures"
-    label: "Events with Options Displayed"
+    label: "Options Displayed Count"
     description: "Events where master or slave options were displayed."
   }
 
@@ -766,58 +811,33 @@ view: fare_family_events {
     description: "Sum of (current - original) air revenue where both present."
   }
 
-  # ------------------------------------------------------------------
-  # Coverage funnel (source-agnostic — works across Amadeus, NDC, aggregators).
-  # Denominator is distinct checkout events; every count is count_distinct(event_id)
-  # so the ~0.14% source duplicates do not inflate rates.
-  # ------------------------------------------------------------------
-
-  measure: checkouts_safe_denom {
-    hidden: yes
-    type: number
-    sql: NULLIF(${distinct_event_count}, 0) ;;
-  }
-
-  measure: options_displayed_distinct {
-    type: count_distinct
-    sql: ${event_id} ;;
-    filters: [has_options_displayed: "yes"]
-    group_label: "12. Coverage Funnel"
-    label: "Checkouts with Upsell Shown"
-    description: "Distinct checkout events where master or slave options were displayed."
-  }
-
-  measure: options_displayed_pct {
-    type: number
-    sql: 1.0 * ${options_displayed_distinct} / ${checkouts_safe_denom} ;;
-    value_format_name: percent_2
-    group_label: "12. Coverage Funnel"
-    label: "Coverage %"
-    description: "Checkouts with an upsell shown / distinct checkout events. Source-agnostic."
-  }
+# ------------------------------------------------------------------
+# Coverage funnel (checkout grain). Denominator = distinct_checkouts
+# (count_distinct checkout_id); every numerator is count_distinct(checkout_id)
+# so cached re-render events don't inflate rates. Source-agnostic.
+# ------------------------------------------------------------------
 
   measure: gds_options_returned_count {
     type: count_distinct
-    sql: ${event_id} ;;
-    filters: [has_gds_options: "yes"]
+    sql: ${checkout_id} ;;
+    filters: [has_valid_checkout_id: "yes", has_gds_options: "yes"]
     group_label: "12. Coverage Funnel"
     label: "Checkouts with Options Returned"
-    description: "Distinct checkout events where the content source returned upsell options (before display filtering)."
+    description: "Distinct checkouts where the content source returned upsell options (before display filtering)."
   }
 
   measure: gds_options_returned_pct {
     type: number
-    sql: 1.0 * ${gds_options_returned_count} / ${checkouts_safe_denom} ;;
+    sql: 1.0 * ${gds_options_returned_count} / NULLIF(${distinct_checkouts}, 0) ;;
     value_format_name: percent_2
     group_label: "12. Coverage Funnel"
     label: "Options Returned %"
-    description: "Checkouts with options returned by the source / distinct checkout events."
   }
 
   measure: repetitive_checkouts_count {
     type: count_distinct
-    sql: ${event_id} ;;
-    filters: [is_repetitive_checkout: "yes"]
+    sql: ${checkout_id} ;;
+    filters: [has_valid_checkout_id: "yes", is_repetitive_checkout: "yes"]
     group_label: "12. Coverage Funnel"
     label: "Repetitive Checkouts"
     description: "Cached re-render (ineligibility_reason = upsell_already_called_for_package)."
@@ -825,7 +845,7 @@ view: fare_family_events {
 
   measure: repetitive_checkouts_pct {
     type: number
-    sql: 1.0 * ${repetitive_checkouts_count} / ${checkouts_safe_denom} ;;
+    sql: 1.0 * ${repetitive_checkouts_count} / NULLIF(${distinct_checkouts}, 0) ;;
     value_format_name: percent_2
     group_label: "12. Coverage Funnel"
     label: "Repetitive Checkouts %"
@@ -833,8 +853,8 @@ view: fare_family_events {
 
   measure: upgraded_checkouts_count {
     type: count_distinct
-    sql: ${event_id} ;;
-    filters: [is_upgraded_checkout: "yes"]
+    sql: ${checkout_id} ;;
+    filters: [has_valid_checkout_id: "yes", is_upgraded_checkout: "yes"]
     group_label: "12. Coverage Funnel"
     label: "Upgraded Checkouts"
     description: "ineligibility_reason = upsell_already_called_for_upgraded_package."
@@ -842,7 +862,7 @@ view: fare_family_events {
 
   measure: upgraded_checkouts_pct {
     type: number
-    sql: 1.0 * ${upgraded_checkouts_count} / ${checkouts_safe_denom} ;;
+    sql: 1.0 * ${upgraded_checkouts_count} / NULLIF(${distinct_checkouts}, 0) ;;
     value_format_name: percent_2
     group_label: "12. Coverage Funnel"
     label: "Upgraded Checkouts %"
@@ -850,16 +870,16 @@ view: fare_family_events {
 
   measure: regular_checkouts_count {
     type: count_distinct
-    sql: ${event_id} ;;
-    filters: [is_regular_checkout: "yes"]
+    sql: ${checkout_id} ;;
+    filters: [has_valid_checkout_id: "yes", is_regular_checkout: "yes"]
     group_label: "12. Coverage Funnel"
     label: "Regular Checkouts"
-    description: "Freshly evaluated checkouts (not repetitive, not upgraded)."
+    description: "Not repetitive and not upgraded-already-called (mostly ineligible_for_* at checkout)."
   }
 
   measure: regular_checkouts_pct {
     type: number
-    sql: 1.0 * ${regular_checkouts_count} / ${checkouts_safe_denom} ;;
+    sql: 1.0 * ${regular_checkouts_count} / NULLIF(${distinct_checkouts}, 0) ;;
     value_format_name: percent_2
     group_label: "12. Coverage Funnel"
     label: "Regular Checkouts %"
@@ -867,17 +887,17 @@ view: fare_family_events {
 
   measure: upgraded_package_count {
     type: count_distinct
-    sql: ${event_id} ;;
-    filters: [is_upgraded_package: "yes"]
+    sql: ${checkout_id} ;;
+    filters: [has_valid_checkout_id: "yes", is_upgraded_package: "yes"]
     group_label: "12. Coverage Funnel"
     label: "Upgraded-package Checkouts"
-    description: "Distinct checkout events flagged is_upgraded_package."
+    description: "Distinct checkouts flagged is_upgraded_package (selected an upgraded package)."
   }
 
   measure: no_options_found_count {
     type: count_distinct
-    sql: ${event_id} ;;
-    filters: [no_options_reason: "no_options_found"]
+    sql: ${checkout_id} ;;
+    filters: [has_valid_checkout_id: "yes", no_options_reason: "no_options_found"]
     group_label: "12. Coverage Funnel"
     label: "No Options Found"
     description: "Checkouts where no upsell options were found."
@@ -885,7 +905,7 @@ view: fare_family_events {
 
   measure: no_options_found_pct {
     type: number
-    sql: 1.0 * ${no_options_found_count} / ${checkouts_safe_denom} ;;
+    sql: 1.0 * ${no_options_found_count} / NULLIF(${distinct_checkouts}, 0) ;;
     value_format_name: percent_2
     group_label: "12. Coverage Funnel"
     label: "No Options Found %"
@@ -893,8 +913,8 @@ view: fare_family_events {
 
   measure: all_options_filtered_count {
     type: count_distinct
-    sql: ${event_id} ;;
-    filters: [no_options_reason: "all_options_filtered"]
+    sql: ${checkout_id} ;;
+    filters: [has_valid_checkout_id: "yes", no_options_reason: "all_options_filtered"]
     group_label: "12. Coverage Funnel"
     label: "All Options Filtered"
     description: "Checkouts where all options were filtered out before display."
@@ -902,7 +922,7 @@ view: fare_family_events {
 
   measure: all_options_filtered_pct {
     type: number
-    sql: 1.0 * ${all_options_filtered_count} / ${checkouts_safe_denom} ;;
+    sql: 1.0 * ${all_options_filtered_count} / NULLIF(${distinct_checkouts}, 0) ;;
     value_format_name: percent_2
     group_label: "12. Coverage Funnel"
     label: "All Options Filtered %"
@@ -950,7 +970,7 @@ view: fare_family_events {
   measure: coverage_pct {
     hidden: yes
     type: number
-    sql: ${options_displayed_pct} + ${upgraded_checkouts_pct} ;;
+    sql: ${checkout_coverage_pct} + ${upgraded_checkouts_pct} ;;
     value_format_name: percent_1
     group_label: "12. Coverage Funnel"
     label: "Coverage (event-grain sum, reference only)"
