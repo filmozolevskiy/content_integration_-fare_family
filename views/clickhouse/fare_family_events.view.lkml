@@ -811,11 +811,38 @@ view: fare_family_events {
     description: "Sum of (current - original) air revenue where both present."
   }
 
-# ------------------------------------------------------------------
-# Coverage funnel (checkout grain). Denominator = distinct_checkouts
-# (count_distinct checkout_id); every numerator is count_distinct(checkout_id)
-# so cached re-render events don't inflate rates. Source-agnostic.
-# ------------------------------------------------------------------
+  # ------------------------------------------------------------------
+  # Coverage funnel (checkout grain). Denominator = distinct_checkouts
+  # (count_distinct checkout_id); every numerator is count_distinct(checkout_id)
+  # so cached re-render events don't inflate rates.
+  # ------------------------------------------------------------------
+
+  measure: distinct_checkouts {
+    type: count_distinct
+    sql: ${checkout_id} ;;
+    filters: [has_valid_checkout_id: "yes"]
+    group_label: "12. Coverage Funnel"
+    label: "Distinct Checkouts"
+    description: "count_distinct(checkout_id) in checkout context. Denominator for checkout coverage."
+  }
+
+  measure: checkouts_with_options {
+    type: count_distinct
+    sql: ${checkout_id} ;;
+    filters: [has_valid_checkout_id: "yes", has_options_displayed: "yes"]
+    group_label: "12. Coverage Funnel"
+    label: "Checkouts with Options Available"
+    description: "Distinct checkouts with at least one event where master or slave options were displayed."
+  }
+
+  measure: checkout_coverage_pct {
+    type: number
+    sql: 1.0 * ${checkouts_with_options} / NULLIF(${distinct_checkouts}, 0) ;;
+    value_format_name: percent_1
+    group_label: "12. Coverage Funnel"
+    label: "Checkout Coverage"
+    description: "Distinct checkouts with an upsell option available / distinct checkouts (checkout context). New-table metric; not comparable to board 1518 coverage."
+  }
 
   measure: gds_options_returned_count {
     type: count_distinct
@@ -926,42 +953,6 @@ view: fare_family_events {
     value_format_name: percent_2
     group_label: "12. Coverage Funnel"
     label: "All Options Filtered %"
-  }
-
-  # ------------------------------------------------------------------
-  # Checkout-grain coverage (Trello #3121). Grain = distinct checkout_id
-  # in checkout context. This is a NEW-TABLE metric: "share of checkouts
-  # where an upsell option was available". It is deliberately NOT
-  # comparable to board 1518 coverage (different pipeline, population,
-  # numerator and eligibility taxonomy). Denominator includes cached
-  # re-renders, since each checkout_id is a real checkout record.
-  # ------------------------------------------------------------------
-
-  measure: distinct_checkouts {
-    type: count_distinct
-    sql: ${checkout_id} ;;
-    filters: [has_valid_checkout_id: "yes"]
-    group_label: "12. Coverage Funnel"
-    label: "Distinct Checkouts"
-    description: "count_distinct(checkout_id) in checkout context. Denominator for checkout coverage."
-  }
-
-  measure: checkouts_with_options {
-    type: count_distinct
-    sql: ${checkout_id} ;;
-    filters: [has_valid_checkout_id: "yes", has_options_displayed: "yes"]
-    group_label: "12. Coverage Funnel"
-    label: "Checkouts with Options Available"
-    description: "Distinct checkouts with at least one event where master or slave options were displayed."
-  }
-
-  measure: checkout_coverage_pct {
-    type: number
-    sql: 1.0 * ${checkouts_with_options} / NULLIF(${distinct_checkouts}, 0) ;;
-    value_format_name: percent_1
-    group_label: "12. Coverage Funnel"
-    label: "Checkout Coverage"
-    description: "Distinct checkouts with an upsell option available / distinct checkouts (checkout context). New-table metric; not comparable to board 1518 coverage."
   }
 
   # Event-grain 1518-formula coverage. Hidden: reads >100% on this table
