@@ -25,7 +25,7 @@ view: fare_family_booking_lookup {
     sql: ${TABLE}.booking_id ;;
     group_label: "13. Bookings"
     label: "Booking ID"
-    description: "Booking (ota.bookings.id) linked to the checkout event by event_key, from the post-booking event. ~5% of bookings have no in-window checkout event and will not appear."
+    description: "Booking (ota.bookings.id) linked to the checkout event by event_key, from the post-booking event. ~3% of bookings have no checkout event in the 7 days before the booking (6,580 of 6,758 matched, 2026-09-22 NY) and will not appear."
   }
 
   dimension: is_booked {

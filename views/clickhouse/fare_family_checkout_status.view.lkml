@@ -31,7 +31,7 @@ view: fare_family_checkout_status {
   dimension: checkout_upsell_status {
     type: string
     sql: ${TABLE}.checkout_upsell_status ;;
-    group_label: "4. Eligibility"
+    group_label: "04. Eligibility"
     label: "Checkout Upsell Status"
     description: "One status per checkout. Upgraded = upgraded during checkout; Fresh = upsell called at checkout; Ineligible = ineligible_for_*; Repetitive = cached re-render only. Priority in that order. Statuses do not overlap and add up to 100%. Use with Checkout #."
     suggestions: ["Upgraded", "Fresh", "Ineligible", "Repetitive"]

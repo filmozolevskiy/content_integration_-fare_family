@@ -55,4 +55,11 @@ explore: fare_family_events {
     relationship: many_to_one
     sql_on: ${fare_family_events.checkout_id} = ${fare_family_checkout_status.checkout_id} ;;
   }
+  # One upsell status and revenue per package (event_key). Pruned when unused.
+  join: fare_family_package_status {
+    view_label: "Fare Family Events"
+    type: left_outer
+    relationship: many_to_one
+    sql_on: ${fare_family_events.event_key} = ${fare_family_package_status.event_key} ;;
+  }
 }
