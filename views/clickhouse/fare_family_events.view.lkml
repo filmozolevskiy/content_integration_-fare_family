@@ -66,17 +66,6 @@ view: fare_family_events {
     description: "Checkout id. Populated for context=checkout; NULL/undefined pre-checkout by design."
   }
 
-  dimension: booking_id {
-    hidden: yes
-    type: number
-    sql: ${TABLE}.booking_id ;;
-    group_label: "1. Identifiers"
-    label: "Booking ID (raw)"
-    # Always NULL under the checkout lock — booking_id lands on post-booking events.
-    # The usable booking link is fare_family_booking_lookup.booking_id via the event_key join.
-    description: "Raw column, NULL at checkout. Use Booking ID from the booking lookup instead."
-  }
-
   # ------------------------------------------------------------------
   # Timestamps
   # ------------------------------------------------------------------
