@@ -59,6 +59,7 @@ view: fare_family_events {
   }
 
   dimension: checkout_id {
+    hidden: yes
     type: string
     sql: ${TABLE}.checkout_id ;;
     group_label: "1. Identifiers"
