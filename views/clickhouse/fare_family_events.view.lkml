@@ -184,7 +184,6 @@ view: fare_family_events {
   # ------------------------------------------------------------------
 
   dimension: is_eligible {
-    hidden: yes
     type: yesno
     sql: ${TABLE}.is_eligible ;;
     group_label: "4. Eligibility"
