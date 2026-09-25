@@ -42,6 +42,6 @@ view: fare_family_booking_lookup {
     sql: ${booking_id} ;;
     group_label: "12. Bookings"
     label: "Booking #"
-    description: "Unique bookings linked to checkout events in range, through event_key. ~0.9% of event_keys carry more than one booking; only one is kept."
+    description: "Completed customer bookings linked through event_key (post-booking event). Multi-ticket counts once (master leg). Covers ~99% of MySQL bookings with checkout_status = booked, is_test = 0, sites 1 and 4, excluding aborted / unconfirmed_segments / multiticket_booking_fail cancels and slave legs; ~99.95% of those with a PNR. Failed bookings without a PNR mostly have no event. Includes ~1% test bookings."
   }
 }
