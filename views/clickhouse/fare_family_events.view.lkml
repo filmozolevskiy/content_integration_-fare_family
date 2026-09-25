@@ -744,26 +744,38 @@ view: fare_family_events {
     description: "count_distinct(event_id). Dedup-safe count."
   }
 
-  measure: booked_checkouts_nbr {
+  measure: checkout_packages_nbr {
     type: count_distinct
-    sql: ${checkout_id} ;;
-    filters: [has_valid_checkout_id: "yes", fare_family_booking_lookup.is_booked: "yes"]
+    sql: ${event_key} ;;
+    filters: [has_valid_checkout_id: "yes"]
     group_label: "11. Measures"
-    label: "Booked Checkouts #"
-    description: "Distinct checkouts linked to a booking through event_key. One booking can link to several checkouts. Not a booking count; use Booking # for bookings."
+    label: "Checkout Package #"
+    description: "Distinct packages (event_key = one search + one package) that reached the checkout page. One package can have several checkouts. Denominator for Booking Rate %."
   }
 
+  measure: booked_packages_nbr {
+    type: count_distinct
+    sql: ${event_key} ;;
+    filters: [has_valid_checkout_id: "yes", fare_family_booking_lookup.is_booked: "yes"]
+    group_label: "11. Measures"
+    label: "Booked Package #"
+    description: "Checkout packages linked to a booking through event_key. One booking = one package."
+  }
+
+  # Why (2026-09-25, FM): package grain, not checkout grain. One event_key holds
+  # several checkouts, so a checkout-grain rate credited ~25% of bookings to 2+
+  # checkouts (9,058 booked checkouts vs 6,552 bookings on 2026-09-22 NY).
   measure: booking_rate_pct {
     type: number
-    sql: 1.0 * ${booked_checkouts_nbr} / NULLIF(${distinct_checkouts_nbr}, 0) ;;
+    sql: 1.0 * ${booked_packages_nbr} / NULLIF(${checkout_packages_nbr}, 0) ;;
     value_format_name: percent_2
     group_label: "11. Measures"
     label: "Booking Rate %"
-    description: "Booked checkouts / distinct checkouts (checkout context). One booking can link to several checkouts; not a conversion rate."
+    description: "Booked packages / checkout packages. Counts completed customer bookings only (~99% of MySQL booked bookings, sites 1 and 4, master leg only); failed bookings without a PNR mostly have no post-booking event."
   }
 
   # Revenue sums hidden (2026-09-24, FM). They add every checkout event, so one
-  # package is counted several times (+7.4% current revenue on 2026-09-22 UTC),
+  # package is counted several times (+7.4% current revenue on 2026-09-22 NY time),
   # and they add CAD / USD / GBP / EUR together. Rebuild as one value per
   # checkout_id (argMax by timestamp), split by currency, named *_amt.
   measure: total_current_air_revenue {
