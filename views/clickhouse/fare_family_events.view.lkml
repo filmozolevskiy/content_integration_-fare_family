@@ -1,6 +1,7 @@
 view: fare_family_events {
   sql_table_name: upsells.fare_family_upgrade_options_event ;;
-  # Parallel event-table view for the new fare-family board (Trello #3121).
+  # Event-level view (Trello #3121). Debugging only: backs the hidden
+  # fare_family_events explore. The board uses fare_family_checkouts.
   # Independent of checkout_with_upsell / upsell_coverage_new; those stay until cut-over.
   # Visible surface is scoped to the checkout column set (context='checkout' board).
 
@@ -716,7 +717,8 @@ view: fare_family_events {
 
 
   # ------------------------------------------------------------------
-  # Measures
+  # Measures — debugging only. This view backs the hidden fare_family_events
+  # explore; the board uses fare_family_checkouts (one row per checkout).
   # ------------------------------------------------------------------
 
   measure: event_rows_nbr {
@@ -738,45 +740,6 @@ view: fare_family_events {
     description: "count_distinct(event_id). Dedup-safe count."
   }
 
-  measure: checkout_packages_nbr {
-    type: count_distinct
-    sql: ${event_key} ;;
-    filters: [has_valid_checkout_id: "yes"]
-    group_label: "11. Measures"
-    label: "Checkout Package #"
-    description: "Distinct packages (event_key = one search + one package) that reached the checkout page. One package can have several checkouts. Denominator for Booking Rate %."
-  }
-
-  measure: booked_packages_nbr {
-    type: count_distinct
-    sql: ${event_key} ;;
-    filters: [has_valid_checkout_id: "yes", fare_family_booking_lookup.is_booked: "yes"]
-    group_label: "11. Measures"
-    label: "Booked Package #"
-    description: "Checkout packages linked to a booking through event_key. One booking = one package."
-  }
-
-  # Why (2026-09-25, FM): package grain, not checkout grain. One event_key holds
-  # several checkouts, so a checkout-grain rate credited ~25% of bookings to 2+
-  # checkouts (9,058 booked checkouts vs 6,552 bookings on 2026-09-22 NY).
-  measure: booking_rate_pct {
-    type: number
-    sql: 1.0 * ${booked_packages_nbr} / NULLIF(${checkout_packages_nbr}, 0) ;;
-    value_format_name: percent_2
-    group_label: "11. Measures"
-    label: "Booking Rate %"
-    description: "Booked packages / checkout packages. Counts completed customer bookings only (~99% of MySQL booked bookings, sites 1 and 4, master leg only); failed bookings without a PNR mostly have no post-booking event."
-  }
-
-  # ------------------------------------------------------------------
-  # Checkout-grain coverage funnel (Trello #3121). Grain = distinct checkout_id
-  # in checkout context; every numerator is count_distinct(checkout_id), so
-  # cached re-render events do not inflate rates. Denominator = distinct_checkouts_nbr.
-  # A checkout counts in a bucket when any of its events meets the condition,
-  # so buckets overlap and do not add up to 100%. New-table metric; NOT
-  # comparable to board 1518 coverage.
-  # ------------------------------------------------------------------
-
   measure: distinct_checkouts_nbr {
     alias: [distinct_checkouts]
     type: count_distinct
@@ -785,121 +748,5 @@ view: fare_family_events {
     group_label: "12. Coverage Funnel"
     label: "Checkout #"
     description: "count_distinct(checkout_id) in checkout context. Denominator for checkout coverage."
-  }
-
-  measure: checkouts_with_options_nbr {
-    alias: [checkouts_with_options]
-    type: count_distinct
-    sql: ${checkout_id} ;;
-    filters: [has_valid_checkout_id: "yes", has_options_displayed: "yes"]
-    group_label: "12. Coverage Funnel"
-    label: "Checkouts with Options Available #"
-    description: "Distinct checkouts with at least one event where an upgrade was displayed (more than the original fare, on master or slave)."
-  }
-
-  measure: checkout_coverage_pct {
-    type: number
-    sql: 1.0 * ${checkouts_with_options_nbr} / NULLIF(${distinct_checkouts_nbr}, 0) ;;
-    value_format_name: percent_1
-    group_label: "12. Coverage Funnel"
-    label: "Checkout Coverage %"
-    description: "Distinct checkouts with an upsell option available / distinct checkouts (checkout context). New-table metric; not comparable to board 1518 coverage."
-  }
-
-  measure: gds_options_returned_nbr {
-    alias: [gds_options_returned_count]
-    type: count_distinct
-    sql: ${checkout_id} ;;
-    filters: [has_valid_checkout_id: "yes", has_gds_options: "yes"]
-    group_label: "12. Coverage Funnel"
-    label: "Checkouts with Options Returned #"
-    description: "Distinct checkouts where the content source returned upsell options (before display filtering)."
-  }
-
-  measure: gds_options_returned_pct {
-    type: number
-    sql: 1.0 * ${gds_options_returned_nbr} / NULLIF(${distinct_checkouts_nbr}, 0) ;;
-    value_format_name: percent_2
-    group_label: "12. Coverage Funnel"
-    label: "Options Returned %"
-    description: "Checkouts where the content source returned upsell options / distinct checkouts. Counts returned options, not necessarily usable ones."
-  }
-
-  measure: no_options_found_nbr {
-    alias: [no_options_found_count]
-    type: count_distinct
-    sql: ${checkout_id} ;;
-    filters: [has_valid_checkout_id: "yes", no_options_reason: "no_options_found"]
-    group_label: "12. Coverage Funnel"
-    label: "No Options Found #"
-    description: "Checkouts where no upsell options were found. One checkout can be in several buckets; do not add them up."
-  }
-
-  measure: no_options_found_pct {
-    type: number
-    sql: 1.0 * ${no_options_found_nbr} / NULLIF(${distinct_checkouts_nbr}, 0) ;;
-    value_format_name: percent_2
-    group_label: "12. Coverage Funnel"
-    label: "No Options Found %"
-    description: "No-options-found checkouts / distinct checkouts. One checkout can be in several buckets; do not add them up."
-  }
-
-  measure: all_options_filtered_nbr {
-    alias: [all_options_filtered_count]
-    type: count_distinct
-    sql: ${checkout_id} ;;
-    filters: [has_valid_checkout_id: "yes", no_options_reason: "all_options_filtered"]
-    group_label: "12. Coverage Funnel"
-    label: "All Options Filtered #"
-    description: "Checkouts where all options were filtered out before display. One checkout can be in several buckets; do not add them up."
-  }
-
-  measure: all_options_filtered_pct {
-    type: number
-    sql: 1.0 * ${all_options_filtered_nbr} / NULLIF(${distinct_checkouts_nbr}, 0) ;;
-    value_format_name: percent_2
-    group_label: "12. Coverage Funnel"
-    label: "All Options Filtered %"
-    description: "All-options-filtered checkouts / distinct checkouts. One checkout can be in several buckets; do not add them up."
-  }
-
-  measure: multiticket_checkouts_nbr {
-    alias: [multiticket_checkouts]
-    type: count_distinct
-    sql: ${checkout_id} ;;
-    filters: [has_valid_checkout_id: "yes", is_multiticket: "yes"]
-    group_label: "12. Coverage Funnel"
-    label: "Multiticket Checkouts #"
-    description: "Distinct checkouts on multi-ticket combinations."
-  }
-
-  measure: non_multiticket_checkouts_nbr {
-    alias: [non_multiticket_checkouts]
-    type: count_distinct
-    sql: ${checkout_id} ;;
-    filters: [has_valid_checkout_id: "yes", is_multiticket: "no"]
-    group_label: "12. Coverage Funnel"
-    label: "Non-Multiticket Checkouts #"
-    description: "Distinct checkouts on single-ticket combinations."
-  }
-
-  measure: multiticket_upgraded_checkouts_nbr {
-    alias: [multiticket_upgraded_checkouts]
-    type: count_distinct
-    sql: ${checkout_id} ;;
-    filters: [has_valid_checkout_id: "yes", is_multiticket: "yes", is_upgraded_checkout: "yes"]
-    group_label: "12. Coverage Funnel"
-    label: "Upgraded Multiticket Checkouts #"
-    description: "Distinct upgraded checkouts on multi-ticket combinations."
-  }
-
-  measure: non_multiticket_upgraded_checkouts_nbr {
-    alias: [non_multiticket_upgraded_checkouts]
-    type: count_distinct
-    sql: ${checkout_id} ;;
-    filters: [has_valid_checkout_id: "yes", is_multiticket: "no", is_upgraded_checkout: "yes"]
-    group_label: "12. Coverage Funnel"
-    label: "Upgraded Non-Multiticket Checkouts #"
-    description: "Distinct upgraded checkouts on single-ticket combinations."
   }
 }
