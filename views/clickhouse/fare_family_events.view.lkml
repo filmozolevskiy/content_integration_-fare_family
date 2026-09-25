@@ -13,7 +13,7 @@ view: fare_family_events {
     hidden: yes
     type: string
     sql: ${TABLE}.event_id ;;
-    group_label: "1. Identifiers"
+    group_label: "01. Identifiers"
     label: "Event ID"
     # Why (2026-07-29, FM): source emits ~0.14%/day exact full-row duplicates and no
     # column combination dedups them, so this is an approximate key (~99.86% unique).
@@ -26,7 +26,7 @@ view: fare_family_events {
     hidden: yes
     type: string
     sql: ${TABLE}.event_key ;;
-    group_label: "1. Identifiers"
+    group_label: "01. Identifiers"
     label: "Event Key"
     description: "Grouping key for related events (search + package scope)."
   }
@@ -35,7 +35,7 @@ view: fare_family_events {
     hidden: yes
     type: string
     sql: ${TABLE}.search_id ;;
-    group_label: "1. Identifiers"
+    group_label: "01. Identifiers"
     label: "Search ID"
     description: "Search this event belongs to."
   }
@@ -44,7 +44,7 @@ view: fare_family_events {
     hidden: yes
     type: string
     sql: ${TABLE}.base_package_id ;;
-    group_label: "1. Identifiers"
+    group_label: "01. Identifiers"
     label: "Base Package ID"
     description: "Package the upgrade options were computed from."
   }
@@ -53,7 +53,7 @@ view: fare_family_events {
     hidden: yes
     type: string
     sql: ${TABLE}.current_package_id ;;
-    group_label: "1. Identifiers"
+    group_label: "01. Identifiers"
     label: "Current Package ID"
     description: "Package currently selected (set once upgraded)."
   }
@@ -62,7 +62,7 @@ view: fare_family_events {
     hidden: yes
     type: string
     sql: ${TABLE}.checkout_id ;;
-    group_label: "1. Identifiers"
+    group_label: "01. Identifiers"
     label: "Checkout ID"
     description: "Checkout id. Populated for context=checkout; NULL/undefined pre-checkout by design."
   }
@@ -75,7 +75,7 @@ view: fare_family_events {
     type: time
     timeframes: [raw, time, hour, date, week, month, quarter, year]
     sql: ${TABLE}.timestamp ;;
-    group_label: "2. Timestamps"
+    group_label: "02. Timestamps"
     label: "Event"
     description: "Event time (seconds). Primary time dimension."
   }
@@ -85,7 +85,7 @@ view: fare_family_events {
     type: time
     timeframes: [raw, time, hour, date, week, month]
     sql: ${TABLE}.timestamp_micro ;;
-    group_label: "2. Timestamps"
+    group_label: "02. Timestamps"
     label: "Event (micro)"
     description: "Microsecond event time."
   }
@@ -98,7 +98,7 @@ view: fare_family_events {
     hidden: yes
     type: string
     sql: ${TABLE}.context ;;
-    group_label: "3. Context & Attributes"
+    group_label: "03. Context & Attributes"
     label: "Context"
     description: "Funnel stage: search_results_preload, search_results, checkout, unknown, post-booking."
     suggestions: ["search_results_preload", "search_results", "checkout", "unknown", "post-booking"]
@@ -107,7 +107,7 @@ view: fare_family_events {
   dimension: device_type {
     type: string
     sql: ${TABLE}.device_type ;;
-    group_label: "3. Context & Attributes"
+    group_label: "03. Context & Attributes"
     label: "Device Type"
     description: "desktop, mobile, mobile_app, tablet."
     suggestions: ["desktop", "mobile", "mobile_app", "tablet"]
@@ -117,7 +117,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.site_id ;;
-    group_label: "3. Context & Attributes"
+    group_label: "03. Context & Attributes"
     label: "Site ID"
     description: "Storefront. 1 and 4 are main; 5 = agencia."
   }
@@ -125,7 +125,7 @@ view: fare_family_events {
   dimension: affiliate_id {
     type: number
     sql: ${TABLE}.affiliate_id ;;
-    group_label: "3. Context & Attributes"
+    group_label: "03. Context & Attributes"
     label: "Affiliate ID"
     description: "Affiliate."
   }
@@ -133,7 +133,7 @@ view: fare_family_events {
   dimension: currency {
     type: string
     sql: upper(${TABLE}.currency) ;;
-    group_label: "3. Context & Attributes"
+    group_label: "03. Context & Attributes"
     label: "Currency"
     description: "Display currency, upper-cased (source sends both USD and usd)."
   }
@@ -141,7 +141,7 @@ view: fare_family_events {
   dimension: trip_type {
     type: string
     sql: ${TABLE}.trip_type ;;
-    group_label: "3. Context & Attributes"
+    group_label: "03. Context & Attributes"
     label: "Trip Type"
     description: "oneway, roundtrip, etc."
   }
@@ -149,7 +149,7 @@ view: fare_family_events {
   dimension: is_multiticket {
     type: yesno
     sql: ${TABLE}.is_multiticket ;;
-    group_label: "3. Context & Attributes"
+    group_label: "03. Context & Attributes"
     label: "Is Multiticket"
     description: "Multi-ticket combination (master + slave tickets)."
   }
@@ -157,7 +157,7 @@ view: fare_family_events {
   dimension: is_upgraded_package {
     type: yesno
     sql: ${TABLE}.is_upgraded_package ;;
-    group_label: "3. Context & Attributes"
+    group_label: "03. Context & Attributes"
     label: "Is Upgraded Package"
     description: "Source flag: event is for an already-upgraded package. Not the canonical upgraded flag; use Is Upgraded Checkout for upgraded counts."
   }
@@ -166,7 +166,7 @@ view: fare_family_events {
     hidden: yes
     type: yesno
     sql: ${TABLE}.is_cached ;;
-    group_label: "3. Context & Attributes"
+    group_label: "03. Context & Attributes"
     label: "Is Cached"
     description: "Result served from cache (~98% of events)."
   }
@@ -174,7 +174,7 @@ view: fare_family_events {
   dimension: is_synthetic {
     type: yesno
     sql: ${TABLE}.is_synthetic ;;
-    group_label: "3. Context & Attributes"
+    group_label: "03. Context & Attributes"
     label: "Is Synthetic"
     description: "Synthetic upgrade selection."
   }
@@ -186,7 +186,7 @@ view: fare_family_events {
   dimension: is_eligible {
     type: yesno
     sql: ${TABLE}.is_eligible ;;
-    group_label: "4. Eligibility"
+    group_label: "04. Eligibility"
     label: "Is Eligible"
     description: "Source flag. Is eligible to call to Content source to get FF upgrade options?"
   }
@@ -194,7 +194,7 @@ view: fare_family_events {
   dimension: ineligibility_reason {
     type: string
     sql: ${TABLE}.ineligibility_reason ;;
-    group_label: "4. Eligibility"
+    group_label: "04. Eligibility"
     label: "Ineligibility Reason"
     description: "Why the pacakge is ineligible to call Content source to get FF upgrade options?"
     suggestions: [
@@ -212,7 +212,7 @@ view: fare_family_events {
   dimension: no_options_reason {
     type: string
     sql: ${TABLE}.no_options_reason ;;
-    group_label: "4. Eligibility"
+    group_label: "04. Eligibility"
     label: "No Options Reason"
     description: "Why we didn't display FF options?"
     suggestions: [
@@ -225,7 +225,7 @@ view: fare_family_events {
   dimension: gds_no_options_reason {
     type: string
     sql: ${TABLE}.gds_no_options_reason ;;
-    group_label: "4. Eligibility"
+    group_label: "04. Eligibility"
     label: "GDS No Options Reason"
     description: "Why the GDS returned no options."
     suggestions: [
@@ -243,7 +243,7 @@ view: fare_family_events {
   dimension: has_atpco_features {
     type: yesno
     sql: ${TABLE}.has_atpco_features ;;
-    group_label: "4. Eligibility"
+    group_label: "04. Eligibility"
     label: "Has ATPCO Features"
     description: "ATPCO fare-family feature data present."
   }
@@ -251,7 +251,7 @@ view: fare_family_events {
   dimension: atpco_error {
     type: string
     sql: ${TABLE}.atpco_error ;;
-    group_label: "4. Eligibility"
+    group_label: "04. Eligibility"
     label: "ATPCO Error"
     description: "ATPCO error, if any."
   }
@@ -263,7 +263,7 @@ view: fare_family_events {
   dimension: master_upgrade_source {
     type: string
     sql: ${TABLE}.master_upgrade_source ;;
-    group_label: "5. Upgrade Source"
+    group_label: "05. Upgrade Source"
     label: "Master Upgrade Source"
     description: "Upgrade source for the master ticket."
   }
@@ -271,7 +271,7 @@ view: fare_family_events {
   dimension: slave_upgrade_source {
     type: string
     sql: ${TABLE}.slave_upgrade_source ;;
-    group_label: "5. Upgrade Source"
+    group_label: "05. Upgrade Source"
     label: "Slave Upgrade Source"
     description: "Upgrade source for the slave ticket (multi-ticket)."
   }
@@ -284,7 +284,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.master_gds_upsell_count ;;
-    group_label: "6. Options"
+    group_label: "06. Options"
     label: "Master GDS Upsell Count"
     description: "GDS upsell options for the master ticket."
   }
@@ -293,7 +293,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.slave_gds_upsell_count ;;
-    group_label: "6. Options"
+    group_label: "06. Options"
     label: "Slave GDS Upsell Count"
     description: "GDS upsell options for the slave ticket."
   }
@@ -302,7 +302,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.master_options_displayed_count ;;
-    group_label: "6. Options"
+    group_label: "06. Options"
     label: "Master Options Displayed"
     description: "Options actually displayed to the user (master)."
   }
@@ -311,7 +311,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.slave_options_displayed_count ;;
-    group_label: "6. Options"
+    group_label: "06. Options"
     label: "Slave Options Displayed"
     description: "Options actually displayed to the user (slave)."
   }
@@ -320,7 +320,7 @@ view: fare_family_events {
     hidden: yes
     type: string
     sql: ${TABLE}.master_fare_family_names ;;
-    group_label: "6. Options"
+    group_label: "06. Options"
     label: "Master Fare Family Names"
     description: "Fare-family names offered (master)."
   }
@@ -329,7 +329,7 @@ view: fare_family_events {
     hidden: yes
     type: string
     sql: ${TABLE}.slave_fare_family_names ;;
-    group_label: "6. Options"
+    group_label: "06. Options"
     label: "Slave Fare Family Names"
     description: "Fare-family names offered (slave)."
   }
@@ -338,7 +338,7 @@ view: fare_family_events {
     hidden: yes
     type: string
     sql: ${TABLE}.master_displayed_fare_family_names ;;
-    group_label: "6. Options"
+    group_label: "06. Options"
     label: "Master Displayed Fare Family Names"
     description: "Fare-family names displayed (master)."
   }
@@ -347,7 +347,7 @@ view: fare_family_events {
     hidden: yes
     type: string
     sql: ${TABLE}.slave_displayed_fare_family_names ;;
-    group_label: "6. Options"
+    group_label: "06. Options"
     label: "Slave Displayed Fare Family Names"
     description: "Fare-family names displayed (slave)."
   }
@@ -360,7 +360,7 @@ view: fare_family_events {
     # both Checkout Coverage and the no-options buckets (71.17% vs 67.18%).
     type: yesno
     sql: ${master_options_displayed_count} > 1 OR ${slave_options_displayed_count} > 1 ;;
-    group_label: "6. Options"
+    group_label: "06. Options"
     label: "Has Options Displayed"
     description: "Yes when the customer could choose an upgrade: more than 1 fare family displayed on master or slave. A count of 1 is the original fare only (no upgrade)."
   }
@@ -368,7 +368,7 @@ view: fare_family_events {
   dimension: has_gds_options {
     type: yesno
     sql: (${master_gds_upsell_count} + ${slave_gds_upsell_count}) > 0 ;;
-    group_label: "6. Options"
+    group_label: "06. Options"
     label: "Has GDS Options Returned"
     description: "Yes when the content source returned any upsell options (master + slave GDS upsell count > 0). Counts options RETURNED, not necessarily usable — mixed-fare-family and original-highest cases still count here."
   }
@@ -376,7 +376,7 @@ view: fare_family_events {
   dimension: is_repetitive_checkout {
     type: yesno
     sql: ${ineligibility_reason} = 'upsell_already_called_for_package' ;;
-    group_label: "4. Eligibility"
+    group_label: "04. Eligibility"
     label: "Is Repetitive Checkout"
     description: "Yes when the upsell was already called for this package (ineligibility_reason = upsell_already_called_for_package) — a cached re-render."
   }
@@ -384,7 +384,7 @@ view: fare_family_events {
   dimension: is_upgraded_checkout {
     type: yesno
     sql: ${ineligibility_reason} = 'upsell_already_called_for_upgraded_package' ;;
-    group_label: "4. Eligibility"
+    group_label: "04. Eligibility"
     label: "Is Upgraded Checkout"
     description: "Yes when the upsell was already called for an upgraded package (ineligibility_reason = upsell_already_called_for_upgraded_package)."
   }
@@ -397,7 +397,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.master_filtered_empty_count ;;
-    group_label: "6a. Filtered Options"
+    group_label: "06a. Filtered Options"
     label: "Master Filtered Empty"
     description: "Options dropped as empty (master)."
   }
@@ -406,7 +406,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.slave_filtered_empty_count ;;
-    group_label: "6a. Filtered Options"
+    group_label: "06a. Filtered Options"
     label: "Slave Filtered Empty"
     description: "Options dropped as empty (slave)."
   }
@@ -415,7 +415,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.master_filtered_cheaper_count ;;
-    group_label: "6a. Filtered Options"
+    group_label: "06a. Filtered Options"
     label: "Master Filtered Cheaper"
     description: "Options dropped as cheaper than base (master)."
   }
@@ -424,7 +424,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.slave_filtered_cheaper_count ;;
-    group_label: "6a. Filtered Options"
+    group_label: "06a. Filtered Options"
     label: "Slave Filtered Cheaper"
     description: "Options dropped as cheaper than base (slave)."
   }
@@ -433,7 +433,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.master_filtered_lesser_count ;;
-    group_label: "6a. Filtered Options"
+    group_label: "06a. Filtered Options"
     label: "Master Filtered Lesser"
     description: "Options dropped as lesser value (master)."
   }
@@ -442,7 +442,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.slave_filtered_lesser_count ;;
-    group_label: "6a. Filtered Options"
+    group_label: "06a. Filtered Options"
     label: "Slave Filtered Lesser"
     description: "Options dropped as lesser value (slave)."
   }
@@ -451,7 +451,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.master_filtered_multiticket_count ;;
-    group_label: "6a. Filtered Options"
+    group_label: "06a. Filtered Options"
     label: "Master Filtered Multiticket"
     description: "Options dropped by multi-ticket rules (master)."
   }
@@ -460,7 +460,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.slave_filtered_multiticket_count ;;
-    group_label: "6a. Filtered Options"
+    group_label: "06a. Filtered Options"
     label: "Slave Filtered Multiticket"
     description: "Options dropped by multi-ticket rules (slave)."
   }
@@ -469,7 +469,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.master_filtered_price_cap_count ;;
-    group_label: "6a. Filtered Options"
+    group_label: "06a. Filtered Options"
     label: "Master Filtered Price Cap"
     description: "Options dropped by price cap (master)."
   }
@@ -478,7 +478,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.slave_filtered_price_cap_count ;;
-    group_label: "6a. Filtered Options"
+    group_label: "06a. Filtered Options"
     label: "Slave Filtered Price Cap"
     description: "Options dropped by price cap (slave)."
   }
@@ -491,7 +491,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.adt_pax_count ;;
-    group_label: "7. Passengers"
+    group_label: "07. Passengers"
     label: "Adults"
     description: "Adult passenger count."
   }
@@ -500,7 +500,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.chd_pax_count ;;
-    group_label: "7. Passengers"
+    group_label: "07. Passengers"
     label: "Children"
     description: "Child passenger count."
   }
@@ -509,7 +509,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.ins_pax_count ;;
-    group_label: "7. Passengers"
+    group_label: "07. Passengers"
     label: "Infants (seat)"
     description: "Infant-with-seat passenger count."
   }
@@ -518,7 +518,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.inl_pax_count ;;
-    group_label: "7. Passengers"
+    group_label: "07. Passengers"
     label: "Infants (lap)"
     description: "Infant-on-lap passenger count."
   }
@@ -527,7 +527,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${adt_pax_count} + ${chd_pax_count} + ${ins_pax_count} + ${inl_pax_count} ;;
-    group_label: "7. Passengers"
+    group_label: "07. Passengers"
     label: "Total Passengers"
     description: "Sum of adult, child, infant-seat and infant-lap counts."
   }
@@ -539,7 +539,7 @@ view: fare_family_events {
   dimension: master_marketing_carriers {
     type: string
     sql: ${TABLE}.master_marketing_carriers ;;
-    group_label: "8. Carriers"
+    group_label: "08. Carriers"
     label: "Master Marketing Carriers"
     description: "Marketing carriers (master)."
   }
@@ -547,7 +547,7 @@ view: fare_family_events {
   dimension: slave_marketing_carriers {
     type: string
     sql: ${TABLE}.slave_marketing_carriers ;;
-    group_label: "8. Carriers"
+    group_label: "08. Carriers"
     label: "Slave Marketing Carriers"
     description: "Marketing carriers (slave)."
   }
@@ -555,7 +555,7 @@ view: fare_family_events {
   dimension: master_operating_carriers {
     type: string
     sql: ${TABLE}.master_operating_carriers ;;
-    group_label: "8. Carriers"
+    group_label: "08. Carriers"
     label: "Master Operating Carriers"
     description: "Operating carriers (master)."
   }
@@ -563,7 +563,7 @@ view: fare_family_events {
   dimension: slave_operating_carriers {
     type: string
     sql: ${TABLE}.slave_operating_carriers ;;
-    group_label: "8. Carriers"
+    group_label: "08. Carriers"
     label: "Slave Operating Carriers"
     description: "Operating carriers (slave)."
   }
@@ -571,7 +571,7 @@ view: fare_family_events {
   dimension: master_validating_carrier {
     type: string
     sql: ${TABLE}.master_validating_carrier ;;
-    group_label: "8. Carriers"
+    group_label: "08. Carriers"
     label: "Master Validating Carrier"
     description: "Validating carrier (master)."
   }
@@ -579,7 +579,7 @@ view: fare_family_events {
   dimension: slave_validating_carrier {
     type: string
     sql: ${TABLE}.slave_validating_carrier ;;
-    group_label: "8. Carriers"
+    group_label: "08. Carriers"
     label: "Slave Validating Carrier"
     description: "Validating carrier (slave)."
   }
@@ -587,7 +587,7 @@ view: fare_family_events {
   dimension: original_master_gds {
     type: string
     sql: ${TABLE}.original_master_gds ;;
-    group_label: "9. GDS Routing"
+    group_label: "09. GDS Routing"
     label: "Original Master GDS"
     description: "GDS of the base package (master)."
   }
@@ -595,7 +595,7 @@ view: fare_family_events {
   dimension: original_slave_gds {
     type: string
     sql: ${TABLE}.original_slave_gds ;;
-    group_label: "9. GDS Routing"
+    group_label: "09. GDS Routing"
     label: "Original Slave GDS"
     description: "GDS of the base package (slave)."
   }
@@ -603,7 +603,7 @@ view: fare_family_events {
   dimension: current_master_gds {
     type: string
     sql: ${TABLE}.current_master_gds ;;
-    group_label: "9. GDS Routing"
+    group_label: "09. GDS Routing"
     label: "Current Master GDS"
     description: "GDS of the current/upgraded package (master)."
   }
@@ -611,7 +611,7 @@ view: fare_family_events {
   dimension: current_slave_gds {
     type: string
     sql: ${TABLE}.current_slave_gds ;;
-    group_label: "9. GDS Routing"
+    group_label: "09. GDS Routing"
     label: "Current Slave GDS"
     description: "GDS of the current/upgraded package (slave)."
   }
@@ -619,7 +619,7 @@ view: fare_family_events {
   dimension: original_master_office_id {
     type: string
     sql: ${TABLE}.original_master_office_id ;;
-    group_label: "9. GDS Routing"
+    group_label: "09. GDS Routing"
     label: "Original Master Office ID"
     description: "Office id of the base package (master)."
   }
@@ -627,7 +627,7 @@ view: fare_family_events {
   dimension: original_slave_office_id {
     type: string
     sql: ${TABLE}.original_slave_office_id ;;
-    group_label: "9. GDS Routing"
+    group_label: "09. GDS Routing"
     label: "Original Slave Office ID"
     description: "Office id of the base package (slave)."
   }
@@ -635,7 +635,7 @@ view: fare_family_events {
   dimension: current_master_office_id {
     type: string
     sql: ${TABLE}.current_master_office_id ;;
-    group_label: "9. GDS Routing"
+    group_label: "09. GDS Routing"
     label: "Current Master Office ID"
     description: "Office id of the current/upgraded package (master)."
   }
@@ -643,7 +643,7 @@ view: fare_family_events {
   dimension: current_slave_office_id {
     type: string
     sql: ${TABLE}.current_slave_office_id ;;
-    group_label: "9. GDS Routing"
+    group_label: "09. GDS Routing"
     label: "Current Slave Office ID"
     description: "Office id of the current/upgraded package (slave)."
   }
@@ -651,7 +651,7 @@ view: fare_family_events {
   dimension: original_master_target_id {
     type: number
     sql: ${TABLE}.original_master_target_id ;;
-    group_label: "9. GDS Routing"
+    group_label: "09. GDS Routing"
     label: "Original Master Target ID"
     description: "Target id of the base package (master)."
   }
@@ -659,7 +659,7 @@ view: fare_family_events {
   dimension: original_slave_target_id {
     type: number
     sql: ${TABLE}.original_slave_target_id ;;
-    group_label: "9. GDS Routing"
+    group_label: "09. GDS Routing"
     label: "Original Slave Target ID"
     description: "Target id of the base package (slave)."
   }
@@ -668,7 +668,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.current_master_target_id ;;
-    group_label: "9. GDS Routing"
+    group_label: "09. GDS Routing"
     label: "Current Master Target ID"
     description: "Target id of the current/upgraded package (master)."
   }
@@ -677,7 +677,7 @@ view: fare_family_events {
     hidden: yes
     type: number
     sql: ${TABLE}.current_slave_target_id ;;
-    group_label: "9. GDS Routing"
+    group_label: "09. GDS Routing"
     label: "Current Slave Target ID"
     description: "Target id of the current/upgraded package (slave)."
   }
@@ -692,7 +692,7 @@ view: fare_family_events {
     group_label: "10. Revenue"
     label: "Original Air Revenue"
     value_format_name: decimal_2
-    description: "Air revenue before upgrade. ~13% populated; confirm unit with source."
+    description: "Air revenue before upgrade. Set on every checkout event. Median ~10 CAD / ~4 USD; can be negative (13% CAD, 28% USD events on 2026-09-22). Unit unconfirmed: likely our margin on the air part, not the fare."
   }
 
   dimension: current_air_revenue {
@@ -701,7 +701,7 @@ view: fare_family_events {
     group_label: "10. Revenue"
     label: "Current Air Revenue"
     value_format_name: decimal_2
-    description: "Air revenue after upgrade. Populated with original_air_revenue."
+    description: "Air revenue after upgrade. Set on every checkout event. Can be negative. Unit unconfirmed: likely our margin on the air part, not the fare."
   }
 
   # ------------------------------------------------------------------
@@ -766,40 +766,6 @@ view: fare_family_events {
     group_label: "11. Measures"
     label: "Booking Rate %"
     description: "Booked packages / checkout packages. Counts completed customer bookings only (~99% of MySQL booked bookings, sites 1 and 4, master leg only); failed bookings without a PNR mostly have no post-booking event."
-  }
-
-  # Revenue sums hidden (2026-09-24, FM). They add every checkout event, so one
-  # package is counted several times (+7.4% current revenue on 2026-09-22 NY time),
-  # and they add CAD / USD / GBP / EUR together. Rebuild as one value per
-  # checkout_id (argMax by timestamp), split by currency, named *_amt.
-  measure: total_current_air_revenue {
-    hidden: yes
-    type: sum
-    sql: ${current_air_revenue} ;;
-    value_format_name: decimal_2
-    group_label: "11. Measures"
-    label: "Total Current Air Revenue"
-    description: "Hidden: counts repeated events and mixes currencies. Do not use."
-  }
-
-  measure: total_original_air_revenue {
-    hidden: yes
-    type: sum
-    sql: ${original_air_revenue} ;;
-    value_format_name: decimal_2
-    group_label: "11. Measures"
-    label: "Total Original Air Revenue"
-    description: "Hidden: counts repeated events and mixes currencies. Do not use."
-  }
-
-  measure: total_air_revenue_uplift {
-    hidden: yes
-    type: sum
-    sql: ${current_air_revenue} - ${original_air_revenue} ;;
-    value_format_name: decimal_2
-    group_label: "11. Measures"
-    label: "Total Air Revenue Uplift"
-    description: "Hidden: counts repeated events and mixes currencies. Do not use."
   }
 
   # ------------------------------------------------------------------
