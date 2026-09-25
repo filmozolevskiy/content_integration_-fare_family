@@ -23,7 +23,7 @@ view: fare_family_booking_lookup {
   dimension: booking_id {
     type: number
     sql: ${TABLE}.booking_id ;;
-    group_label: "12. Bookings"
+    group_label: "13. Bookings"
     label: "Booking ID"
     description: "Booking (ota.bookings.id) linked to the checkout event by event_key, from the post-booking event. ~5% of bookings have no in-window checkout event and will not appear."
   }
@@ -31,7 +31,7 @@ view: fare_family_booking_lookup {
   dimension: is_booked {
     type: yesno
     sql: ${booking_id} IS NOT NULL ;;
-    group_label: "12. Bookings"
+    group_label: "13. Bookings"
     label: "Is Booked"
     description: "Checkout event matched to a booking via event_key."
   }
@@ -40,7 +40,7 @@ view: fare_family_booking_lookup {
     alias: [distinct_bookings]
     type: count_distinct
     sql: ${booking_id} ;;
-    group_label: "12. Bookings"
+    group_label: "13. Bookings"
     label: "Booking #"
     description: "Completed customer bookings linked through event_key (post-booking event). Multi-ticket counts once (master leg). Covers ~99% of MySQL bookings with checkout_status = booked, is_test = 0, sites 1 and 4, excluding aborted / unconfirmed_segments / multiticket_booking_fail cancels and slave legs; ~99.95% of those with a PNR. Failed bookings without a PNR mostly have no event. Includes ~1% test bookings."
   }
