@@ -30,8 +30,21 @@ datagroup: fare_family_events_daily {
   max_cache_age: "24 hours"
 }
 
+explore: fare_family_checkouts {
+  label: "Fare Family Checkouts"
+  description: "One row per checkout (checkout context). Upsell status, coverage, bookings and booked revenue."
+  persist_with: fare_family_events_daily
+  # The date filter is pushed into the derived table; default 30 days.
+  conditionally_filter: {
+    filters: [fare_family_checkouts.checkout_date: "30 days"]
+    unless:  [fare_family_checkouts.checkout_date]
+  }
+}
+
+# Event-level explore, hidden: debugging only (one row per event).
 explore: fare_family_events {
-  label: "Fare Family Events"
+  label: "Fare Family Events (debug)"
+  hidden: yes
   persist_with: fare_family_events_daily
   # Lock the whole explore to the checkout funnel stage — applies to every
   # dimension and measure, non-overridable.
@@ -39,27 +52,5 @@ explore: fare_family_events {
   conditionally_filter: {
     filters: [fare_family_events.timestamp_date: "30 days"]
     unless:  [fare_family_events.timestamp_date]
-  }
-  # Booking linkage: booking_id lives on post-booking events, so left-join the
-  # per-event_key booking lookup. Pruned on tiles that select no booking field.
-  join: fare_family_booking_lookup {
-    view_label: "Fare Family Events"
-    type: left_outer
-    relationship: many_to_one
-    sql_on: ${fare_family_events.event_key} = ${fare_family_booking_lookup.event_key} ;;
-  }
-  # One upsell status per checkout. Pruned on tiles that select no status field.
-  join: fare_family_checkout_status {
-    view_label: "Fare Family Events"
-    type: left_outer
-    relationship: many_to_one
-    sql_on: ${fare_family_events.checkout_id} = ${fare_family_checkout_status.checkout_id} ;;
-  }
-  # One upsell status and revenue per package (event_key). Pruned when unused.
-  join: fare_family_package_status {
-    view_label: "Fare Family Events"
-    type: left_outer
-    relationship: many_to_one
-    sql_on: ${fare_family_events.event_key} = ${fare_family_package_status.event_key} ;;
   }
 }
