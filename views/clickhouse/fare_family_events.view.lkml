@@ -859,44 +859,6 @@ view: fare_family_events {
     description: "Checkouts where the content source returned upsell options / distinct checkouts. Counts returned options, not necessarily usable ones."
   }
 
-  measure: repetitive_checkouts_nbr {
-    alias: [repetitive_checkouts_count]
-    type: count_distinct
-    sql: ${checkout_id} ;;
-    filters: [has_valid_checkout_id: "yes", is_repetitive_checkout: "yes"]
-    group_label: "12. Coverage Funnel"
-    label: "Repetitive Checkouts #"
-    description: "Cached re-render (ineligibility_reason = upsell_already_called_for_package). One checkout can be in several buckets; do not add them up."
-  }
-
-  measure: repetitive_checkouts_pct {
-    type: number
-    sql: 1.0 * ${repetitive_checkouts_nbr} / NULLIF(${distinct_checkouts_nbr}, 0) ;;
-    value_format_name: percent_2
-    group_label: "12. Coverage Funnel"
-    label: "Repetitive Checkouts %"
-    description: "Repetitive checkouts / distinct checkouts. One checkout can be in several buckets; do not add them up."
-  }
-
-  measure: upgraded_checkouts_nbr {
-    alias: [upgraded_checkouts_count]
-    type: count_distinct
-    sql: ${checkout_id} ;;
-    filters: [has_valid_checkout_id: "yes", is_upgraded_checkout: "yes"]
-    group_label: "12. Coverage Funnel"
-    label: "Upgraded Checkouts #"
-    description: "ineligibility_reason = upsell_already_called_for_upgraded_package. Canonical upgraded flag. One checkout can be in several buckets; do not add them up."
-  }
-
-  measure: upgraded_checkouts_pct {
-    type: number
-    sql: 1.0 * ${upgraded_checkouts_nbr} / NULLIF(${distinct_checkouts_nbr}, 0) ;;
-    value_format_name: percent_2
-    group_label: "12. Coverage Funnel"
-    label: "Upgraded Checkouts %"
-    description: "Upgraded checkouts / distinct checkouts. One checkout can be in several buckets; do not add them up."
-  }
-
   measure: no_options_found_nbr {
     alias: [no_options_found_count]
     type: count_distinct

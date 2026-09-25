@@ -47,4 +47,10 @@ explore: fare_family_events {
     relationship: many_to_one
     sql_on: ${fare_family_events.event_key} = ${fare_family_booking_lookup.event_key} ;;
   }
+  # One upsell status per checkout. Pruned on tiles that select no status field.
+  join: fare_family_checkout_status {
+    type: left_outer
+    relationship: many_to_one
+    sql_on: ${fare_family_events.checkout_id} = ${fare_family_checkout_status.checkout_id} ;;
+  }
 }
