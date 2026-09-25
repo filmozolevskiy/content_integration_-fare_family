@@ -25,7 +25,7 @@ explore: upsell_coverage_new {
 
 # --- New parallel setup for the new fare-family board (Trello #3121) ---
 # Independent of the two explores above; those stay until cut-over.
-datagroup: fare_family_events_daily {
+datagroup: fare_family_checkouts_daily {
   sql_trigger: SELECT toDate(now()) ;;
   max_cache_age: "24 hours"
 }
@@ -33,24 +33,10 @@ datagroup: fare_family_events_daily {
 explore: fare_family_checkouts {
   label: "Fare Family Checkouts"
   description: "One row per checkout (checkout context). Upsell status, coverage, bookings and booked revenue."
-  persist_with: fare_family_events_daily
+  persist_with: fare_family_checkouts_daily
   # The date filter is pushed into the derived table; default 30 days.
   conditionally_filter: {
     filters: [fare_family_checkouts.checkout_date: "30 days"]
     unless:  [fare_family_checkouts.checkout_date]
-  }
-}
-
-# Event-level explore, hidden: debugging only (one row per event).
-explore: fare_family_events {
-  label: "Fare Family Events (debug)"
-  hidden: yes
-  persist_with: fare_family_events_daily
-  # Lock the whole explore to the checkout funnel stage — applies to every
-  # dimension and measure, non-overridable.
-  sql_always_where: ${fare_family_events.context} = 'checkout' ;;
-  conditionally_filter: {
-    filters: [fare_family_events.timestamp_date: "30 days"]
-    unless:  [fare_family_events.timestamp_date]
   }
 }
