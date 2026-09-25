@@ -353,11 +353,16 @@ view: fare_family_events {
   }
 
   dimension: has_options_displayed {
+    # Why (2026-09-25, FM): a displayed count of 1 is the original fare only.
+    # Single-ticket events with count = 1 always carry no_options_reason and an
+    # empty displayed fare-family list (3,419 events on 2026-09-22 NY); count >= 2
+    # never does (0 events, 2026-09-18 to 09-24). "> 0" put those checkouts in
+    # both Checkout Coverage and the no-options buckets (71.17% vs 67.18%).
     type: yesno
-    sql: ${master_options_displayed_count} > 0 OR ${slave_options_displayed_count} > 0 ;;
+    sql: ${master_options_displayed_count} > 1 OR ${slave_options_displayed_count} > 1 ;;
     group_label: "6. Options"
     label: "Has Options Displayed"
-    description: "Yes when master or slave upsell options were displayed to the customer for this event."
+    description: "Yes when the customer could choose an upgrade: more than 1 fare family displayed on master or slave. A count of 1 is the original fare only (no upgrade)."
   }
 
   dimension: has_gds_options {
@@ -823,7 +828,7 @@ view: fare_family_events {
     filters: [has_valid_checkout_id: "yes", has_options_displayed: "yes"]
     group_label: "12. Coverage Funnel"
     label: "Checkouts with Options Available #"
-    description: "Distinct checkouts with at least one event where master or slave options were displayed."
+    description: "Distinct checkouts with at least one event where an upgrade was displayed (more than the original fare, on master or slave)."
   }
 
   measure: checkout_coverage_pct {
@@ -899,7 +904,7 @@ view: fare_family_events {
     filters: [has_valid_checkout_id: "yes", no_options_reason: "no_options_found"]
     group_label: "12. Coverage Funnel"
     label: "No Options Found #"
-    description: "Checkouts where no upsell options were found. One checkout can be in several buckets (also Checkout Coverage); do not add them up."
+    description: "Checkouts where no upsell options were found. One checkout can be in several buckets; do not add them up."
   }
 
   measure: no_options_found_pct {
@@ -918,7 +923,7 @@ view: fare_family_events {
     filters: [has_valid_checkout_id: "yes", no_options_reason: "all_options_filtered"]
     group_label: "12. Coverage Funnel"
     label: "All Options Filtered #"
-    description: "Checkouts where all options were filtered out before display. One checkout can be in several buckets (also Checkout Coverage); do not add them up."
+    description: "Checkouts where all options were filtered out before display. One checkout can be in several buckets; do not add them up."
   }
 
   measure: all_options_filtered_pct {
