@@ -73,7 +73,8 @@ view: fare_family_checkouts {
            GROUP BY checkout_id
          ),
          bookings AS (
-           SELECT event_key AS booked_event_key, max(booking_id) AS package_booking_id
+           SELECT event_key AS booked_event_key, max(booking_id) AS package_booking_id,
+                  max((booking_id, toUInt8(is_upgraded_package))).2 AS package_booking_upgraded
            FROM upsells.fare_family_upgrade_options_event
            WHERE context = 'post-booking' AND booking_id > 0
            GROUP BY event_key
@@ -82,7 +83,10 @@ view: fare_family_checkouts {
            checkouts.*,
            if(bookings.package_booking_id > 0
                 AND checkouts.last_event_at = max(checkouts.last_event_at) OVER (PARTITION BY checkouts.event_key),
-              bookings.package_booking_id, NULL) AS booking_id
+              bookings.package_booking_id, NULL) AS booking_id,
+           if(bookings.package_booking_id > 0
+                AND checkouts.last_event_at = max(checkouts.last_event_at) OVER (PARTITION BY checkouts.event_key),
+              bookings.package_booking_upgraded, NULL) AS booking_is_upgraded
          FROM checkouts
          LEFT JOIN bookings ON checkouts.event_key = bookings.booked_event_key ;;
   }
@@ -115,6 +119,19 @@ view: fare_family_checkouts {
     group_label: "13. Bookings"
     label: "Is Booked"
     description: "Yes when this checkout is credited with a booking (the last checkout of a booked package)."
+  }
+
+  # Why (2026-09-28, FM): the post-booking event's is_upgraded_package describes
+  # the booked fare itself. It matched MySQL booking_details.is_upgraded_package
+  # (either multi-ticket leg) on 558 of 558 upgraded bookings, 0 extra, on
+  # 2026-09-22 NY. The checkout status does not: 92% of upgrades happen on the
+  # search page (upgrade_source_page), and customers can switch back to base.
+  dimension: is_upgraded_booking {
+    type: yesno
+    sql: ifNull(${TABLE}.booking_is_upgraded, 0) = 1 ;;
+    group_label: "13. Bookings"
+    label: "Is Upgraded Booking"
+    description: "Yes when this checkout is credited with a booking on an upgraded fare family (from the post-booking event; matches MySQL booking_details.is_upgraded_package on either multi-ticket leg)."
   }
 
   dimension: event_count {
@@ -646,6 +663,31 @@ view: fare_family_checkouts {
     group_label: "13. Bookings"
     label: "Booking %"
     description: "Booking # / Checkout #: bookings per checkout."
+  }
+
+  measure: upgraded_bookings_nbr {
+    type: count_distinct
+    sql: ${booking_id} ;;
+    filters: [is_upgraded_booking: "yes"]
+    group_label: "13. Bookings"
+    label: "Upgraded Booking #"
+    description: "Bookings on an upgraded fare family, wherever the upgrade happened (search page or checkout). From the post-booking event; matches MySQL."
+  }
+
+  measure: upgraded_checkout_bookings_nbr {
+    hidden: yes
+    type: count_distinct
+    sql: ${booking_id} ;;
+    filters: [checkout_upsell_status: "Upgraded"]
+  }
+
+  measure: upgraded_bookings_pct {
+    type: number
+    sql: 1.0 * ${upgraded_checkout_bookings_nbr} / NULLIF(${upgraded_checkouts_nbr}, 0) ;;
+    value_format_name: percent_2
+    group_label: "13. Bookings"
+    label: "Upgraded Booking %"
+    description: "Conversion from upgraded checkout to booking: bookings credited to checkouts with Checkout Upsell Status = Upgraded / Upgraded Checkout #. The numerator is not Upgraded Booking #: that also counts bookings upgraded before checkout, and leaves out customers who switched back to base."
   }
 
   # Why (2026-09-25, FM): unit unconfirmed. Values look like our margin on the air
