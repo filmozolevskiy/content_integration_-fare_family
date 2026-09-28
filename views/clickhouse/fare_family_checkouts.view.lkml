@@ -356,6 +356,55 @@ view: fare_family_checkouts {
     description: "Upgrade source for the slave ticket (multi-ticket), on the checkout's last event."
   }
 
+  # Why (2026-09-28, FM): upgrade source = office id(s) of the upsell call. The
+  # office -> content source mapping lives in MySQL ota.gds_offices (office_id, gds),
+  # which ClickHouse cannot join, so it is copied here. Source: gds_offices on
+  # 2026-09-28, with overrides: AC -> ACNDC, NDC -> FRONTIERNDC, Navitaire-ndc ->
+  # NAVITAIRENDC, NAVPDUSD -> NAVITAIRENDC and YWGC42440 -> Amadeus (both missing
+  # from gds_offices). Covers all 30 offices seen since 2026-08-25. Add new offices
+  # to BOTH lists below; unmapped ones show as "Unknown office X".
+  dimension: master_upgrade_source_gds {
+    type: string
+    sql: nullIf(arrayStringConcat(arrayDistinct(arrayMap(o -> transform(o,
+           ['ATL1S211S', 'YKXC42100', 'YTOC421CV', 'ORD1S21DE', 'HNL1S210I', 'BFSU128AG',
+                    'YULC4212L', 'FLL1S21CD', 'ATL1S21GX', 'LONU128XZ', 'LISPA2082', 'LAX1S24D1',
+                    'DTW1S218C', 'LONU128L7', 'YYCC4213T', 'ATL1S2170', 'HFAI3250N', 'ATL1S2116',
+                    'YKXC42101', 'FLL1S215J', 'CMBVS31VP', 'YTOC421GR', 'YWGC42440', 'ACNDCCAD',
+                    'ACNDCUSD', 'FRONTIERNDCUSD', 'AB2L', 'AB2O', 'NAVPDCAD', 'NAVPDUSD'],
+           ['Amadeus', 'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus',
+                    'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus',
+                    'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus',
+                    'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus', 'ACNDC',
+                    'ACNDC', 'FRONTIERNDC', 'Farelogix', 'Farelogix', 'NAVITAIRENDC', 'NAVITAIRENDC'],
+           concat('Unknown office ', o)),
+           arrayFilter(o -> o != '', arrayMap(o -> trim(o), splitByChar(',', ifNull(${TABLE}.master_upgrade_source, '')))))), ', '), '') ;;
+    group_label: "05. Upgrade Source"
+    label: "Master Upgrade Source GDS"
+    description: "Content source of the office(s) used for the master ticket's upsell call (from Master Upgrade Source). Several offices are mapped and de-duplicated, e.g. YKXC42100,YTOC421CV = Amadeus. 'Unknown office X' = office not in the mapping yet; empty = no upgrade source."
+    suggestions: ["Amadeus", "ACNDC", "FRONTIERNDC", "Farelogix", "NAVITAIRENDC"]
+  }
+
+  dimension: slave_upgrade_source_gds {
+    type: string
+    sql: nullIf(arrayStringConcat(arrayDistinct(arrayMap(o -> transform(o,
+           ['ATL1S211S', 'YKXC42100', 'YTOC421CV', 'ORD1S21DE', 'HNL1S210I', 'BFSU128AG',
+                    'YULC4212L', 'FLL1S21CD', 'ATL1S21GX', 'LONU128XZ', 'LISPA2082', 'LAX1S24D1',
+                    'DTW1S218C', 'LONU128L7', 'YYCC4213T', 'ATL1S2170', 'HFAI3250N', 'ATL1S2116',
+                    'YKXC42101', 'FLL1S215J', 'CMBVS31VP', 'YTOC421GR', 'YWGC42440', 'ACNDCCAD',
+                    'ACNDCUSD', 'FRONTIERNDCUSD', 'AB2L', 'AB2O', 'NAVPDCAD', 'NAVPDUSD'],
+           ['Amadeus', 'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus',
+                    'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus',
+                    'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus',
+                    'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus', 'Amadeus', 'ACNDC',
+                    'ACNDC', 'FRONTIERNDC', 'Farelogix', 'Farelogix', 'NAVITAIRENDC', 'NAVITAIRENDC'],
+           concat('Unknown office ', o)),
+           arrayFilter(o -> o != '', arrayMap(o -> trim(o), splitByChar(',', ifNull(${TABLE}.slave_upgrade_source, '')))))), ', '), '') ;;
+    group_label: "05. Upgrade Source"
+    label: "Slave Upgrade Source GDS"
+    description: "Content source of the office(s) used for the slave ticket's upsell call (from Slave Upgrade Source). Several offices are mapped and de-duplicated, e.g. YKXC42100,YTOC421CV = Amadeus. 'Unknown office X' = office not in the mapping yet; empty = no upgrade source."
+    suggestions: ["Amadeus", "ACNDC", "FRONTIERNDC", "Farelogix", "NAVITAIRENDC"]
+  }
+
   dimension: master_marketing_carriers {
     type: string
     sql: ${TABLE}.master_marketing_carriers ;;
