@@ -28,6 +28,11 @@ view: fare_family_checkouts {
              anyIf(ineligibility_reason, ineligibility_reason LIKE 'ineligible_for_%') AS ineligible_reason,
              max(master_options_displayed_count > 1 OR slave_options_displayed_count > 1) AS has_options_displayed,
              max((master_gds_upsell_count + slave_gds_upsell_count) > 0) AS has_gds_options,
+             max(master_filtered_price_cap_count + slave_filtered_price_cap_count > 0) AS filtered_price_cap,
+             max(master_filtered_multiticket_count + slave_filtered_multiticket_count > 0) AS filtered_multiticket,
+             max(master_filtered_lesser_count + slave_filtered_lesser_count > 0) AS filtered_lesser,
+             max(master_filtered_cheaper_count + slave_filtered_cheaper_count > 0) AS filtered_cheaper,
+             max(master_filtered_empty_count + slave_filtered_empty_count > 0) AS filtered_empty,
              argMax(tuple(no_options_reason), timestamp_micro).1 AS no_options_reason,
              argMax(tuple(gds_no_options_reason), timestamp_micro).1 AS gds_no_options_reason,
              max(is_upgraded_package) AS is_upgraded_package,
@@ -292,6 +297,33 @@ view: fare_family_checkouts {
     description: "Yes when the content source returned any upsell options on any event of the checkout. Counts options returned, not necessarily usable."
   }
 
+  # Why (2026-09-28, FM): the gap between Options Returned and Options Available
+  # is our own filters (5,782 checkouts on 2026-09-22 NY), not the content source:
+  # a GDS no-options reason with options returned hit only 764 checkouts, and 473
+  # of them still displayed options (mostly the other ticket of a multi-ticket).
+  dimension: has_options_filtered {
+    type: yesno
+    sql: ${TABLE}.has_gds_options AND NOT ${TABLE}.has_options_displayed ;;
+    group_label: "06. Options"
+    label: "Has Options Filtered"
+    description: "Yes when the content source returned options but our filters removed them all, so no upgrade was displayed. Options Returned minus Options Filtered = Options Available."
+  }
+
+  dimension: options_filter_reason {
+    type: string
+    sql: multiIf(NOT (${TABLE}.has_gds_options AND NOT ${TABLE}.has_options_displayed), NULL,
+                 ${TABLE}.filtered_price_cap, 'Price Cap',
+                 ${TABLE}.filtered_multiticket, 'Multi-ticket',
+                 ${TABLE}.filtered_lesser, 'Lesser',
+                 ${TABLE}.filtered_cheaper, 'Cheaper',
+                 ${TABLE}.filtered_empty, 'Empty',
+                 'None recorded') ;;
+    group_label: "06. Options"
+    label: "Options Filter Reason"
+    description: "Which of our filters removed the returned options, when Has Options Filtered = Yes. One reason per checkout, priority: Price Cap > Multi-ticket > Lesser > Cheaper > Empty. Empty otherwise."
+    suggestions: ["Price Cap", "Multi-ticket", "Lesser", "Cheaper", "Empty", "None recorded"]
+  }
+
   dimension: has_atpco_features {
     type: yesno
     sql: ${TABLE}.has_atpco_features ;;
@@ -514,6 +546,23 @@ view: fare_family_checkouts {
     group_label: "12. Coverage Funnel"
     label: "Checkouts with Options Returned %"
     description: "Checkouts with Options Returned # / Checkout #. Counts returned options, not necessarily usable ones."
+  }
+
+  measure: checkouts_with_options_filtered_nbr {
+    type: count
+    filters: [has_options_filtered: "yes"]
+    group_label: "12. Coverage Funnel"
+    label: "Checkouts with Options Filtered #"
+    description: "Checkouts where the content source returned options but our filters removed them all. Options Returned # minus this = Options Available #."
+  }
+
+  measure: checkouts_with_options_filtered_pct {
+    type: number
+    sql: 1.0 * ${checkouts_with_options_filtered_nbr} / NULLIF(${checkouts_nbr}, 0) ;;
+    value_format_name: percent_2
+    group_label: "12. Coverage Funnel"
+    label: "Checkouts with Options Filtered %"
+    description: "Checkouts with Options Filtered # / Checkout #."
   }
 
   measure: upgraded_checkouts_nbr {
