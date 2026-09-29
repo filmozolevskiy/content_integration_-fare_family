@@ -7,8 +7,13 @@ view: fare_family_checkouts {
   #   the last event and the rest from any event (0 checkouts change value).
   # - Checkout Upsell Status = priority Upgraded > Fresh > Ineligible > Repetitive;
   #   customers upgrade after their first event, so a first-event rule misses upgrades.
-  # - booking_id is credited to the last checkout of the booked package (event_key),
-  #   so each booking belongs to exactly one checkout (6,552 = 6,552 on 2026-09-22 NY).
+  # - booking_id is credited to the package's (event_key) checkout with the latest
+  #   start before the booking (first post-booking event); if none started before,
+  #   to the package's last checkout. Each booking belongs to exactly one checkout
+  #   (6,552 = 6,552 on 2026-09-22 NY). Why (2026-09-29, FM): customers reopen the
+  #   package after paying; "last checkout" credited 103 of 6,552 bookings to a
+  #   checkout that started after the booking. Limit: a checkout after the end of
+  #   the date filter is not visible.
   # - Ephemeral SQL derived table — no datagroup_trigger (clickhouse-prod rejects PDTs).
   #   The explore's date filter is pushed into the checkouts CTE.
   derived_table: {
@@ -18,6 +23,7 @@ view: fare_family_checkouts {
              any(event_key) AS event_key,
              any(search_id) AS search_id,
              min(timestamp) AS checkout_at,
+             min(timestamp_micro) AS first_event_at,
              max(timestamp_micro) AS last_event_at,
              uniqExact(event_id) AS event_count,
              multiIf(countIf(ineligibility_reason = 'upsell_already_called_for_upgraded_package') > 0, 'Upgraded',
@@ -74,21 +80,35 @@ view: fare_family_checkouts {
          ),
          bookings AS (
            SELECT event_key AS booked_event_key, max(booking_id) AS package_booking_id,
-                  max((booking_id, toUInt8(is_upgraded_package))).2 AS package_booking_upgraded
+                  max((booking_id, toUInt8(is_upgraded_package))).2 AS package_booking_upgraded,
+                  min(timestamp_micro) AS booked_at
            FROM upsells.fare_family_upgrade_options_event
            WHERE context = 'post-booking' AND booking_id > 0
            GROUP BY event_key
          )
          SELECT
-           checkouts.*,
-           if(bookings.package_booking_id > 0
-                AND checkouts.last_event_at = max(checkouts.last_event_at) OVER (PARTITION BY checkouts.event_key),
-              bookings.package_booking_id, NULL) AS booking_id,
-           if(bookings.package_booking_id > 0
-                AND checkouts.last_event_at = max(checkouts.last_event_at) OVER (PARTITION BY checkouts.event_key),
-              bookings.package_booking_upgraded, NULL) AS booking_is_upgraded
-         FROM checkouts
-         LEFT JOIN bookings ON checkouts.event_key = bookings.booked_event_key ;;
+           credit.*,
+           if(credit.package_booking_id > 0
+                AND if(credit.credited_first_event_at IS NOT NULL,
+                       credit.first_event_at = credit.credited_first_event_at,
+                       credit.last_event_at = credit.package_last_event_at),
+              credit.package_booking_id, NULL) AS booking_id,
+           if(credit.package_booking_id > 0
+                AND if(credit.credited_first_event_at IS NOT NULL,
+                       credit.first_event_at = credit.credited_first_event_at,
+                       credit.last_event_at = credit.package_last_event_at),
+              credit.package_booking_upgraded, NULL) AS booking_is_upgraded
+         FROM (
+           SELECT
+             checkouts.*,
+             bookings.package_booking_id AS package_booking_id,
+             bookings.package_booking_upgraded AS package_booking_upgraded,
+             max(if(checkouts.first_event_at <= bookings.booked_at, checkouts.first_event_at, NULL))
+               OVER (PARTITION BY checkouts.event_key) AS credited_first_event_at,
+             max(checkouts.last_event_at) OVER (PARTITION BY checkouts.event_key) AS package_last_event_at
+           FROM checkouts
+           LEFT JOIN bookings ON checkouts.event_key = bookings.booked_event_key
+         ) AS credit ;;
   }
 
   # ------------------------------------------------------------------
@@ -110,7 +130,7 @@ view: fare_family_checkouts {
     value_format_name: id
     group_label: "13. Bookings"
     label: "Booking ID"
-    description: "Booking (ota.bookings.id) from the post-booking event, credited to the last checkout of the booked package (same search + package). Empty on every other checkout."
+    description: "Booking (ota.bookings.id) from the post-booking event, credited to the checkout of the booked package (same search + package) with the latest start before the booking. Empty on every other checkout."
   }
 
   dimension: is_booked {
@@ -118,7 +138,7 @@ view: fare_family_checkouts {
     sql: ${TABLE}.booking_id IS NOT NULL ;;
     group_label: "13. Bookings"
     label: "Is Booked"
-    description: "Yes when this checkout is credited with a booking (the last checkout of a booked package)."
+    description: "Yes when this checkout is credited with a booking (the checkout of the booked package with the latest start before the booking)."
   }
 
   # Why (2026-09-28, FM): the post-booking event's is_upgraded_package describes
