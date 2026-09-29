@@ -39,4 +39,19 @@ explore: fare_family_checkouts {
     filters: [fare_family_checkouts.checkout_date: "30 days"]
     unless:  [fare_family_checkouts.checkout_date]
   }
+  # One row per ticket (leg). Used for coverage by carrier / content source.
+  # With a leg field in the query, multi-ticket checkouts appear twice: counts
+  # stay distinct on checkout_id; the booked revenue sums are not available.
+  join: fare_family_checkout_legs {
+    view_label: "Checkout Legs"
+    relationship: one_to_many
+    sql: ARRAY JOIN arrayFilter(l -> l.1 = 'Master' OR ${fare_family_checkouts.is_multiticket},
+           [tuple('Master', ${fare_family_checkouts.master_validating_carrier}, ${fare_family_checkouts.original_master_gds},
+                  ${fare_family_checkouts.original_master_office_id}, ${fare_family_checkouts.master_upgrade_source_gds},
+                  ${fare_family_checkouts.master_has_options_displayed}, ${fare_family_checkouts.master_has_gds_options}),
+            tuple('Slave', ${fare_family_checkouts.slave_validating_carrier}, ${fare_family_checkouts.original_slave_gds},
+                  ${fare_family_checkouts.original_slave_office_id}, ${fare_family_checkouts.slave_upgrade_source_gds},
+                  ${fare_family_checkouts.slave_has_options_displayed}, ${fare_family_checkouts.slave_has_gds_options})])
+           AS fare_family_checkout_legs ;;
+  }
 }
