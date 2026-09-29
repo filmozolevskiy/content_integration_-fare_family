@@ -34,6 +34,10 @@ view: fare_family_checkouts {
              anyIf(ineligibility_reason, ineligibility_reason LIKE 'ineligible_for_%') AS ineligible_reason,
              max(master_options_displayed_count > 1 OR slave_options_displayed_count > 1) AS has_options_displayed,
              max((master_gds_upsell_count + slave_gds_upsell_count) > 0) AS has_gds_options,
+             max(master_options_displayed_count > 1) AS master_has_options_displayed,
+             max(slave_options_displayed_count > 1) AS slave_has_options_displayed,
+             max(master_gds_upsell_count > 0) AS master_has_gds_options,
+             max(slave_gds_upsell_count > 0) AS slave_has_gds_options,
              max(master_filtered_price_cap_count + slave_filtered_price_cap_count > 0) AS filtered_price_cap,
              max(master_filtered_multiticket_count + slave_filtered_multiticket_count > 0) AS filtered_multiticket,
              max(master_filtered_lesser_count + slave_filtered_lesser_count > 0) AS filtered_lesser,
@@ -323,7 +327,7 @@ view: fare_family_checkouts {
     sql: ${TABLE}.has_options_displayed ;;
     group_label: "06. Options"
     label: "Has Options Available"
-    description: "Yes when the customer could choose an upgrade in this checkout: more than 1 fare family displayed on master or slave on any event. A count of 1 is the original fare only."
+    description: "Yes when the customer could choose an upgrade in this checkout: more than 1 fare family displayed on master or slave on any event. A count of 1 is the original fare only. For multi-ticket, one leg is enough; for results by carrier or content source, use Checkout Legs."
   }
 
   dimension: has_gds_options {
@@ -331,7 +335,32 @@ view: fare_family_checkouts {
     sql: ${TABLE}.has_gds_options ;;
     group_label: "06. Options"
     label: "Has Options Returned"
-    description: "Yes when the content source returned any upsell options on any event of the checkout. Counts options returned, not necessarily usable."
+    description: "Yes when the content source returned any upsell options on any event of the checkout (master or slave). Counts options returned, not necessarily usable. For results by carrier or content source, use Checkout Legs."
+  }
+
+  # Per-leg flags, read by fare_family_checkout_legs.
+  dimension: master_has_options_displayed {
+    hidden: yes
+    type: yesno
+    sql: ${TABLE}.master_has_options_displayed ;;
+  }
+
+  dimension: slave_has_options_displayed {
+    hidden: yes
+    type: yesno
+    sql: ${TABLE}.slave_has_options_displayed ;;
+  }
+
+  dimension: master_has_gds_options {
+    hidden: yes
+    type: yesno
+    sql: ${TABLE}.master_has_gds_options ;;
+  }
+
+  dimension: slave_has_gds_options {
+    hidden: yes
+    type: yesno
+    sql: ${TABLE}.slave_has_gds_options ;;
   }
 
   # Why (2026-09-28, FM): the gap between Options Returned and Options Available
@@ -479,7 +508,7 @@ view: fare_family_checkouts {
     sql: ${TABLE}.master_validating_carrier ;;
     group_label: "08. Carriers"
     label: "Master Validating Carrier"
-    description: "Validating carrier (master)."
+    description: "Validating carrier (master). Checkout-level fields count both legs; for coverage by carrier use Leg Validating Carrier."
   }
 
   dimension: slave_validating_carrier {
@@ -487,7 +516,7 @@ view: fare_family_checkouts {
     sql: ${TABLE}.slave_validating_carrier ;;
     group_label: "08. Carriers"
     label: "Slave Validating Carrier"
-    description: "Validating carrier (slave)."
+    description: "Validating carrier (slave). Checkout-level fields count both legs; for coverage by carrier use Leg Validating Carrier."
   }
 
   dimension: original_master_gds {
@@ -495,7 +524,7 @@ view: fare_family_checkouts {
     sql: ${TABLE}.original_master_gds ;;
     group_label: "09. GDS Routing"
     label: "Original Master GDS"
-    description: "GDS of the base package (master)."
+    description: "GDS of the base package (master). Checkout-level fields count both legs; for coverage by content source use Leg Fare Provider."
   }
 
   dimension: original_slave_gds {
@@ -503,7 +532,7 @@ view: fare_family_checkouts {
     sql: ${TABLE}.original_slave_gds ;;
     group_label: "09. GDS Routing"
     label: "Original Slave GDS"
-    description: "GDS of the base package (slave)."
+    description: "GDS of the base package (slave). Checkout-level fields count both legs; for coverage by content source use Leg Fare Provider."
   }
 
   dimension: current_master_gds {
@@ -614,7 +643,7 @@ view: fare_family_checkouts {
     value_format_name: percent_2
     group_label: "12. Coverage Funnel"
     label: "Checkouts with Options Available %"
-    description: "Checkouts with Options Available # / Checkout #. New-table metric; not comparable to board 1518 coverage."
+    description: "Checkouts with Options Available # / Checkout #. A multi-ticket checkout counts when either leg displayed options, so do not split it by a Master / Slave carrier or GDS; use Checkout Legs with Options Available % for that."
   }
 
   measure: checkouts_with_options_returned_nbr {
