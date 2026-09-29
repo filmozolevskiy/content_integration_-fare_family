@@ -202,7 +202,6 @@ view: fare_family_checkouts {
   }
 
   dimension: search_id {
-    hidden: yes
     type: string
     sql: ${TABLE}.search_id ;;
     group_label: "01. Identifiers"
