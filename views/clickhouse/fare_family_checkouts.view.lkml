@@ -393,15 +393,22 @@ view: fare_family_checkouts {
   # stacked chart of Checkout # (same idea as Checkout Upsell Status). No checkout
   # displays options without options returned (0 on 2026-09-22 NY), so the order
   # holds. Stages add up to Checkout # (81,458 on 2026-09-22 NY). Bookings at
-  # stages 1-3 (1,892 that day) stay there.
+  # stages 1-4 stay there (1,892 that day at stages 1-3 before the split).
+  # Why (2026-09-30, FM): Options Filtered Out is split by has_atpco_features.
+  # RH Failure = no Route Happy ATPCO data, so the Empty filter removed every
+  # option (700 checkouts, 691 of them Empty). Internal Filtering = ATPCO data
+  # present (5,004). 700 + 5,004 = 5,704 = old Options Filtered Out (2026-09-22
+  # NY). Assumption: no ATPCO features = RH failure; the source never records
+  # the RH error (atpco_error is always NULL).
   # Upgraded Checkout = the customer entered checkout on an upgraded package
-  # (Checkout Upsell Status = Upgraded). It skips stages 2-3: the customer already
+  # (Checkout Upsell Status = Upgraded). It skips stages 2-4: the customer already
   # upgraded, even when this checkout displayed nothing (3 on 2026-09-22 NY).
   dimension: options_funnel_stage {
     type: string
     sql: multiIf(${TABLE}.upsell_status = 'Ineligible', 'Not Eligible',
                  ${TABLE}.upsell_status != 'Upgraded' AND NOT ${TABLE}.has_gds_options, 'No Options Returned',
-                 ${TABLE}.upsell_status != 'Upgraded' AND NOT ${TABLE}.has_options_displayed, 'Options Filtered Out',
+                 ${TABLE}.upsell_status != 'Upgraded' AND NOT ${TABLE}.has_options_displayed AND NOT ${TABLE}.has_atpco_features, 'RH Failure',
+                 ${TABLE}.upsell_status != 'Upgraded' AND NOT ${TABLE}.has_options_displayed, 'Internal Filtering',
                  ${TABLE}.booking_id IS NOT NULL AND ifNull(${TABLE}.booking_is_upgraded, 0) = 1, 'Booked, Upgraded',
                  ${TABLE}.booking_id IS NOT NULL, 'Booked, Original Fare',
                  ${TABLE}.upsell_status = 'Upgraded', 'Upgraded Checkout, Not Booked',
@@ -409,8 +416,8 @@ view: fare_family_checkouts {
     order_by_field: options_funnel_stage_order
     group_label: "12. Coverage Funnel"
     label: "Options Funnel Stage"
-    description: "Where the checkout's flow stopped. Not Eligible > No Options Returned (content source returned nothing) > Options Filtered Out (our filters removed all) > Options Available, Not Upgraded > Upgraded Checkout, Not Booked (customer entered checkout on an upgraded package) > Booked, Original Fare > Booked, Upgraded. One stage per checkout; stages add up to Checkout #. A booking without options displayed stays in its earlier stage; an upgraded checkout skips the options stages."
-    suggestions: ["Not Eligible", "No Options Returned", "Options Filtered Out", "Options Available, Not Upgraded", "Upgraded Checkout, Not Booked", "Booked, Original Fare", "Booked, Upgraded"]
+    description: "Where the checkout's flow stopped. Not Eligible > No Options Returned (content source returned nothing) > RH Failure (options returned, all removed, no Route Happy ATPCO features) > Internal Filtering (options returned, all removed by our filters, Route Happy ATPCO features present) > Options Available, Not Upgraded > Upgraded Checkout, Not Booked (customer entered checkout on an upgraded package) > Booked, Original Fare > Booked, Upgraded. One stage per checkout; stages add up to Checkout #. A booking without options displayed stays in its earlier stage; an upgraded checkout skips the options stages."
+    suggestions: ["Not Eligible", "No Options Returned", "RH Failure", "Internal Filtering", "Options Available, Not Upgraded", "Upgraded Checkout, Not Booked", "Booked, Original Fare", "Booked, Upgraded"]
   }
 
   dimension: options_funnel_stage_order {
@@ -418,11 +425,12 @@ view: fare_family_checkouts {
     type: number
     sql: multiIf(${TABLE}.upsell_status = 'Ineligible', 1,
                  ${TABLE}.upsell_status != 'Upgraded' AND NOT ${TABLE}.has_gds_options, 2,
-                 ${TABLE}.upsell_status != 'Upgraded' AND NOT ${TABLE}.has_options_displayed, 3,
-                 ${TABLE}.booking_id IS NOT NULL AND ifNull(${TABLE}.booking_is_upgraded, 0) = 1, 7,
-                 ${TABLE}.booking_id IS NOT NULL, 6,
-                 ${TABLE}.upsell_status = 'Upgraded', 5,
-                 4) ;;
+                 ${TABLE}.upsell_status != 'Upgraded' AND NOT ${TABLE}.has_options_displayed AND NOT ${TABLE}.has_atpco_features, 3,
+                 ${TABLE}.upsell_status != 'Upgraded' AND NOT ${TABLE}.has_options_displayed, 4,
+                 ${TABLE}.booking_id IS NOT NULL AND ifNull(${TABLE}.booking_is_upgraded, 0) = 1, 8,
+                 ${TABLE}.booking_id IS NOT NULL, 7,
+                 ${TABLE}.upsell_status = 'Upgraded', 6,
+                 5) ;;
   }
 
   dimension: has_atpco_features {
