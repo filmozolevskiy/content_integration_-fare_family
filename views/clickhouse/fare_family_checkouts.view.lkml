@@ -389,48 +389,71 @@ view: fare_family_checkouts {
     suggestions: ["Price Cap", "Multi-ticket", "Lesser", "Cheaper", "Empty", "None recorded"]
   }
 
-  # Why (2026-09-29, FM): one stage per checkout = where its flow stopped, for a
-  # stacked chart of Checkout # (same idea as Checkout Upsell Status). No checkout
-  # displays options without options returned (0 on 2026-09-22 NY), so the order
-  # holds. Stages add up to Checkout # (81,458 on 2026-09-22 NY). Bookings at
-  # stages 1-4 stay there (1,892 that day at stages 1-3 before the split).
-  # Why (2026-09-30, FM): Options Filtered Out is split by has_atpco_features.
-  # RH Failure = no Route Happy ATPCO data, so the Empty filter removed every
-  # option (700 checkouts, 691 of them Empty). Internal Filtering = ATPCO data
-  # present (5,004). 700 + 5,004 = 5,704 = old Options Filtered Out (2026-09-22
-  # NY). Assumption: no ATPCO features = RH failure; the source never records
-  # the RH error (atpco_error is always NULL).
-  # Upgraded Checkout = the customer entered checkout on an upgraded package
-  # (Checkout Upsell Status = Upgraded). It skips stages 2-4: the customer already
-  # upgraded, even when this checkout displayed nothing (3 on 2026-09-22 NY).
-  dimension: options_funnel_stage {
+  # Why (2026-09-30, FM): the old single stage list (Options Funnel Stage) mixed two
+  # questions, so it is two funnels of one stage per checkout each, for stacked
+  # charts of Checkout #.
+  # Display funnel (100% = Checkout #): where the checkout lost its options. No
+  # checkout displays options without options returned (0 on 2026-09-22 NY), so
+  # the order holds. Stages add up to Checkout # (81,458 on 2026-09-22 NY).
+  # RH Failure = options returned, all removed, no Route Happy ATPCO data, so the
+  # Empty filter removed every option (700 checkouts, 691 of them Empty).
+  # Internal Filtering = same, ATPCO data present (5,004). Assumption: no ATPCO
+  # features = RH failure; the source never records the RH error (atpco_error is
+  # always NULL). An upgraded checkout (Checkout Upsell Status = Upgraded) skips
+  # stages 2-4: the customer already upgraded, even when this checkout displayed
+  # nothing (3 on 2026-09-22 NY). Bookings at stages 1-4 stay there.
+  dimension: display_funnel_stage {
     type: string
     sql: multiIf(${TABLE}.upsell_status = 'Ineligible', 'Not Eligible',
                  ${TABLE}.upsell_status != 'Upgraded' AND NOT ${TABLE}.has_gds_options, 'No Options Returned',
                  ${TABLE}.upsell_status != 'Upgraded' AND NOT ${TABLE}.has_options_displayed AND NOT ${TABLE}.has_atpco_features, 'RH Failure',
                  ${TABLE}.upsell_status != 'Upgraded' AND NOT ${TABLE}.has_options_displayed, 'Internal Filtering',
-                 ${TABLE}.booking_id IS NOT NULL AND ifNull(${TABLE}.booking_is_upgraded, 0) = 1, 'Booked, Upgraded',
-                 ${TABLE}.booking_id IS NOT NULL, 'Booked, Original Fare',
-                 ${TABLE}.upsell_status = 'Upgraded', 'Upgraded Checkout, Not Booked',
-                 'Options Available, Not Upgraded') ;;
-    order_by_field: options_funnel_stage_order
+                 'Options Available') ;;
+    order_by_field: display_funnel_stage_order
     group_label: "12. Coverage Funnel"
-    label: "Options Funnel Stage"
-    description: "Where the checkout's flow stopped. Not Eligible > No Options Returned (content source returned nothing) > RH Failure (options returned, all removed, no Route Happy ATPCO features) > Internal Filtering (options returned, all removed by our filters, Route Happy ATPCO features present) > Options Available, Not Upgraded > Upgraded Checkout, Not Booked (customer entered checkout on an upgraded package) > Booked, Original Fare > Booked, Upgraded. One stage per checkout; stages add up to Checkout #. A booking without options displayed stays in its earlier stage; an upgraded checkout skips the options stages."
-    suggestions: ["Not Eligible", "No Options Returned", "RH Failure", "Internal Filtering", "Options Available, Not Upgraded", "Upgraded Checkout, Not Booked", "Booked, Original Fare", "Booked, Upgraded"]
+    label: "Display Funnel Stage"
+    description: "Where the checkout lost its upgrade options. Not Eligible > No Options Returned (content source returned nothing) > RH Failure (options returned, all removed, no Route Happy ATPCO features) > Internal Filtering (options returned, all removed by our filters, Route Happy ATPCO features present) > Options Available. One stage per checkout; stages add up to Checkout #. An upgraded checkout counts as Options Available."
+    suggestions: ["Not Eligible", "No Options Returned", "RH Failure", "Internal Filtering", "Options Available"]
   }
 
-  dimension: options_funnel_stage_order {
+  dimension: display_funnel_stage_order {
     hidden: yes
     type: number
     sql: multiIf(${TABLE}.upsell_status = 'Ineligible', 1,
                  ${TABLE}.upsell_status != 'Upgraded' AND NOT ${TABLE}.has_gds_options, 2,
                  ${TABLE}.upsell_status != 'Upgraded' AND NOT ${TABLE}.has_options_displayed AND NOT ${TABLE}.has_atpco_features, 3,
                  ${TABLE}.upsell_status != 'Upgraded' AND NOT ${TABLE}.has_options_displayed, 4,
-                 ${TABLE}.booking_id IS NOT NULL AND ifNull(${TABLE}.booking_is_upgraded, 0) = 1, 8,
-                 ${TABLE}.booking_id IS NOT NULL, 7,
-                 ${TABLE}.upsell_status = 'Upgraded', 6,
                  5) ;;
+  }
+
+  # Conversion funnel (100% = Options Available): what customers did once options
+  # existed. Empty outside Options Available, so a tile filters on "not null".
+  # Booked, Upgraded = the booking is on an upgraded fare (same as Is Upgraded
+  # Booking), also when the status is not Upgraded: 9 of 556 on 2026-09-22 NY
+  # upgraded during checkout. Upgraded Checkout = status Upgraded, no upgraded
+  # booking (6,758; includes 6 that booked the original fare). Not Upgraded
+  # includes bookings on the original fare (47,409). Stages add up to Options
+  # Available (54,723 on 2026-09-22 NY).
+  dimension: conversion_funnel_stage {
+    type: string
+    sql: multiIf(NOT (${TABLE}.upsell_status != 'Ineligible' AND (${TABLE}.upsell_status = 'Upgraded' OR ${TABLE}.has_options_displayed)), NULL,
+                 ifNull(${TABLE}.booking_is_upgraded, 0) = 1, 'Booked, Upgraded',
+                 ${TABLE}.upsell_status = 'Upgraded', 'Upgraded Checkout',
+                 'Not Upgraded') ;;
+    order_by_field: conversion_funnel_stage_order
+    group_label: "12. Coverage Funnel"
+    label: "Conversion Funnel Stage"
+    description: "What the customer did once options were available. Empty unless Display Funnel Stage = Options Available. Not Upgraded (includes bookings on the original fare) > Upgraded Checkout (customer entered checkout on an upgraded package, no upgraded booking) > Booked, Upgraded (booking on an upgraded fare). One stage per checkout; stages add up to Options Available."
+    suggestions: ["Not Upgraded", "Upgraded Checkout", "Booked, Upgraded"]
+  }
+
+  dimension: conversion_funnel_stage_order {
+    hidden: yes
+    type: number
+    sql: multiIf(NOT (${TABLE}.upsell_status != 'Ineligible' AND (${TABLE}.upsell_status = 'Upgraded' OR ${TABLE}.has_options_displayed)), 0,
+                 ifNull(${TABLE}.booking_is_upgraded, 0) = 1, 3,
+                 ${TABLE}.upsell_status = 'Upgraded', 2,
+                 1) ;;
   }
 
   dimension: has_atpco_features {
