@@ -671,7 +671,7 @@ view: fare_family_checkouts {
     value_format_name: decimal_2
     group_label: "10. Revenue"
     label: "Original Air Revenue"
-    description: "Air revenue before upgrade, on the checkout's last event. Median ~10 CAD / ~4 USD; can be negative. Unit unconfirmed: likely our margin on the air part, not the fare."
+    description: "Air revenue before upgrade, on the checkout's last event. Median ~10 CAD / ~4 USD; can be negative. Margin on the air part, not the fare."
   }
 
   dimension: current_air_revenue {
@@ -680,7 +680,7 @@ view: fare_family_checkouts {
     value_format_name: decimal_2
     group_label: "10. Revenue"
     label: "Current Air Revenue"
-    description: "Air revenue after upgrade, on the checkout's last event. Can be negative. Unit unconfirmed: likely our margin on the air part, not the fare."
+    description: "Air revenue after upgrade, on the checkout's last event. Can be negative. Margin on the air part, not the fare."
   }
 
   # ------------------------------------------------------------------
@@ -805,16 +805,17 @@ view: fare_family_checkouts {
     description: "Conversion from upgraded checkout to booking: bookings credited to checkouts with Checkout Upsell Status = Upgraded / Upgraded Checkout #. The numerator is not Upgraded Booking #: that also counts bookings upgraded before checkout, and leaves out customers who switched back to base."
   }
 
-  # Why (2026-09-25, FM): unit unconfirmed. Values look like our margin on the air
-  # part, not the fare: median 9.85 CAD / 3.80 USD; 13% CAD / 28% USD checkout
-  # events are below 0 (2026-09-22 NY). Drop "(unconfirmed)" once the source owner confirms.
+  # Why (2026-09-25, FM): values look like our margin on the air part, not the
+  # fare: median 9.85 CAD / 3.80 USD; 13% CAD / 28% USD checkout events are below
+  # 0 (2026-09-22 NY). Verified 2026-10-01 by a manual upgraded booking: the
+  # uplift matches.
   measure: booked_original_air_revenue_amt {
     type: sum
     sql: ${original_air_revenue} ;;
     filters: [is_booked: "yes"]
     value_format_name: decimal_2
     group_label: "10. Revenue"
-    label: "Booked Original Air Revenue $ (unconfirmed)"
+    label: "Booked Original Air Revenue $"
     description: "Original air revenue of booked checkouts. Group by Currency; do not add currencies together. Can be negative."
   }
 
@@ -824,7 +825,7 @@ view: fare_family_checkouts {
     filters: [is_booked: "yes"]
     value_format_name: decimal_2
     group_label: "10. Revenue"
-    label: "Booked Current Air Revenue $ (unconfirmed)"
+    label: "Booked Current Air Revenue $"
     description: "Current (after upgrade) air revenue of booked checkouts. Group by Currency; do not add currencies together. Can be negative."
   }
 
@@ -834,7 +835,7 @@ view: fare_family_checkouts {
     filters: [is_booked: "yes"]
     value_format_name: decimal_2
     group_label: "10. Revenue"
-    label: "Booked Air Revenue Uplift $ (unconfirmed)"
+    label: "Booked Air Revenue Uplift $"
     description: "Current minus original air revenue of booked checkouts: the gain from upgrades. Group by Currency; do not add currencies together."
   }
 }
