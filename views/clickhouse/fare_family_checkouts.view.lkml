@@ -122,7 +122,7 @@ view: fare_family_checkouts {
          ),
          origins AS (
            SELECT
-             o.checkout_id AS checkout_id,
+             o.checkout_id AS origin_checkout_id,
              o.opened_upgraded AS origin_opened_upgraded,
              m.modal_event_id != '' AS origin_has_modal,
              m.modal_has_options AS origin_modal_has_options,
@@ -144,7 +144,7 @@ view: fare_family_checkouts {
          )
          {% else %}
          , origins AS (
-           SELECT '' AS checkout_id, toUInt8(0) AS origin_opened_upgraded, toUInt8(0) AS origin_has_modal,
+           SELECT '' AS origin_checkout_id, toUInt8(0) AS origin_opened_upgraded, toUInt8(0) AS origin_has_modal,
                   toUInt8(0) AS origin_modal_has_options, toUInt8(0) AS origin_search_has_events
            WHERE 0
          )
@@ -175,7 +175,7 @@ view: fare_family_checkouts {
              origins.origin_search_has_events AS origin_search_has_events
            FROM checkouts
            LEFT JOIN bookings ON checkouts.event_key = bookings.booked_event_key
-           LEFT JOIN origins ON checkouts.checkout_id = origins.checkout_id
+           LEFT JOIN origins ON checkouts.checkout_id = origins.origin_checkout_id
          ) AS credit ;;
   }
 
