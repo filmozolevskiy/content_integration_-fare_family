@@ -14,6 +14,16 @@ view: fare_family_checkouts {
   #   package after paying; "last checkout" credited 103 of 6,552 bookings to a
   #   checkout that started after the booking. Limit: a checkout after the end of
   #   the date filter is not visible.
+  # - Upgrade Origin / Saw Upgrades Modal (2026-10-01, FM): the CTEs bounds, openings
+  #   and origins read the modal (context 'search_results', no checkout_id). The modal
+  #   event is the latest one for the same search + base package before the checkout's
+  #   first event (ASOF join); a join by search alone is wrong, one search holds many
+  #   packages. They run only when a query uses one of the two dimensions; otherwise
+  #   origins is empty and existing tiles cost the same as before. Lookback: 2 days
+  #   before the date filter. Checked on 2026-09-22 NY against MySQL
+  #   booking_details.upgrade_source_page for 566 upgraded bookings: Modal 439 of 439
+  #   known = search; Checkout Page 41 of 41 known = checkout; Partner Deeplink 56 of
+  #   61 = search.
   # - Ephemeral SQL derived table — no datagroup_trigger (clickhouse-prod rejects PDTs).
   #   The explore's date filter is pushed into the checkouts CTE.
   derived_table: {
@@ -90,6 +100,55 @@ view: fare_family_checkouts {
            WHERE context = 'post-booking' AND booking_id > 0
            GROUP BY event_key
          )
+         {% if fare_family_checkouts.upgrade_origin._in_query or fare_family_checkouts.upgrade_origin._is_filtered or fare_family_checkouts.saw_upgrades_modal._in_query or fare_family_checkouts.saw_upgrades_modal._is_filtered %}
+         , bounds AS (
+           SELECT min(timestamp) - INTERVAL 2 DAY AS lo, max(timestamp) AS hi
+           FROM upsells.fare_family_upgrade_options_event
+           WHERE context = 'checkout'
+             AND {% condition fare_family_checkouts.checkout_date %} timestamp {% endcondition %}
+         ),
+         openings AS (
+           SELECT
+             checkout_id,
+             argMin(search_id, timestamp_micro) AS search_id,
+             argMin(base_package_id, timestamp_micro) AS base_package_id,
+             min(timestamp_micro) AS first_event_at,
+             argMin(is_upgraded_package, timestamp_micro) AS opened_upgraded
+           FROM upsells.fare_family_upgrade_options_event
+           WHERE context = 'checkout'
+             AND checkout_id NOT IN ('', 'undefined') AND checkout_id IS NOT NULL
+             AND timestamp >= (SELECT lo FROM bounds) AND timestamp <= (SELECT hi FROM bounds)
+           GROUP BY checkout_id
+         ),
+         origins AS (
+           SELECT
+             o.checkout_id AS checkout_id,
+             o.opened_upgraded AS origin_opened_upgraded,
+             m.modal_event_id != '' AS origin_has_modal,
+             m.modal_has_options AS origin_modal_has_options,
+             o.search_id IN (
+               SELECT search_id FROM upsells.fare_family_upgrade_options_event
+               WHERE context IN ('search_results', 'search_results_preload')
+                 AND timestamp >= (SELECT lo FROM bounds) AND timestamp <= (SELECT hi FROM bounds)
+             ) AS origin_search_has_events
+           FROM openings AS o
+           ASOF LEFT JOIN (
+             SELECT search_id, base_package_id, timestamp_micro AS modal_at, event_id AS modal_event_id,
+                    (master_options_displayed_count > 1 OR slave_options_displayed_count > 1) AS modal_has_options
+             FROM upsells.fare_family_upgrade_options_event
+             WHERE context = 'search_results'
+               AND timestamp >= (SELECT lo FROM bounds) AND timestamp <= (SELECT hi FROM bounds)
+           ) AS m
+             ON o.search_id = m.search_id AND o.base_package_id = m.base_package_id
+            AND o.first_event_at >= m.modal_at
+         )
+         {% else %}
+         , origins AS (
+           SELECT '' AS checkout_id, toUInt8(0) AS origin_opened_upgraded, toUInt8(0) AS origin_has_modal,
+                  toUInt8(0) AS origin_modal_has_options, toUInt8(0) AS origin_search_has_events
+           WHERE 0
+         )
+         {% endif %}
          SELECT
            credit.*,
            if(credit.package_booking_id > 0
@@ -109,9 +168,14 @@ view: fare_family_checkouts {
              bookings.package_booking_upgraded AS package_booking_upgraded,
              max(if(checkouts.first_event_at <= bookings.booked_at, checkouts.first_event_at, NULL))
                OVER (PARTITION BY checkouts.event_key) AS credited_first_event_at,
-             max(checkouts.last_event_at) OVER (PARTITION BY checkouts.event_key) AS package_last_event_at
+             max(checkouts.last_event_at) OVER (PARTITION BY checkouts.event_key) AS package_last_event_at,
+             origins.origin_opened_upgraded AS origin_opened_upgraded,
+             origins.origin_has_modal AS origin_has_modal,
+             origins.origin_modal_has_options AS origin_modal_has_options,
+             origins.origin_search_has_events AS origin_search_has_events
            FROM checkouts
            LEFT JOIN bookings ON checkouts.event_key = bookings.booked_event_key
+           LEFT JOIN origins ON checkouts.checkout_id = origins.checkout_id
          ) AS credit ;;
   }
 
@@ -454,6 +518,44 @@ view: fare_family_checkouts {
                  ifNull(${TABLE}.booking_is_upgraded, 0) = 1, 3,
                  ${TABLE}.upsell_status = 'Upgraded', 2,
                  1) ;;
+  }
+
+  # Why (2026-10-01, FM): where the customer chose the upgrade. Staging2 and 566
+  # upgraded bookings (2026-09-22 NY) against MySQL booking_details.upgrade_source_page:
+  # - Modal: the checkout opened already upgraded and the search had a modal event for
+  #   the package (439 of 439 known = search). An earlier non-upgraded checkout for the
+  #   same package does not make it a checkout upgrade (0 of 123 = checkout).
+  # - Checkout Page: the upgrade appears inside the same checkout_id (41 of 42 known =
+  #   checkout; 584 checkouts on 2026-09-22 NY).
+  # - Partner Deeplink: opened upgraded, no search events at all. A partner link
+  #   (Kayak, affiliates 16 and 782; log context checkout-deeplink-ff-upgrade-selection)
+  #   picks the fare family with the ff parameter (56 of 61 = search, 5 = checkout).
+  # - Search Page, No Modal Event: opened upgraded, search events exist, no modal event
+  #   found in the lookback (11 of 11 = search).
+  # Assumption: Partner Deeplink is a proxy for 'no search events'; the source does
+  # not record the entry point.
+  dimension: upgrade_origin {
+    type: string
+    sql: multiIf(NOT ${TABLE}.is_upgraded_package, 'Not Upgraded',
+                 NOT ${TABLE}.origin_opened_upgraded, 'Checkout Page',
+                 ${TABLE}.origin_has_modal, 'Modal',
+                 NOT ${TABLE}.origin_search_has_events, 'Partner Deeplink',
+                 'Search Page, No Modal Event') ;;
+    group_label: "14. Upgrade Origin"
+    label: "Upgrade Origin"
+    description: "Where the customer chose the upgrade. Modal = checkout opened already upgraded after the upgrades modal on the search page. Checkout Page = upgraded inside the checkout. Partner Deeplink = opened upgraded with no search-stage events (partner link picked the fare family). Search Page, No Modal Event = opened upgraded, modal event not found. Not Upgraded = no upgrade. Matches MySQL upgrade_source_page on 98.9% of upgraded bookings with a known page (2026-09-22 NY). Loads extra data: use only when needed."
+    suggestions: ["Modal", "Checkout Page", "Partner Deeplink", "Search Page, No Modal Event", "Not Upgraded"]
+  }
+
+  dimension: saw_upgrades_modal {
+    type: string
+    sql: multiIf(NOT ${TABLE}.origin_has_modal, 'No Modal Event',
+                 ${TABLE}.origin_modal_has_options, 'Options Shown',
+                 'No Options Shown') ;;
+    group_label: "14. Upgrade Origin"
+    label: "Saw Upgrades Modal"
+    description: "What the upgrades modal on the search page showed for this package before the checkout started: Options Shown (more than the original fare), No Options Shown, or No Modal Event (partner link, mobile app, or modal event not found). Uses the latest modal event for the same search and package before the checkout's first event. Loads extra data: use only when needed."
+    suggestions: ["Options Shown", "No Options Shown", "No Modal Event"]
   }
 
   dimension: has_atpco_features {
